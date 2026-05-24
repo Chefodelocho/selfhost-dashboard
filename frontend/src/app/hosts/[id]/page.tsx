@@ -1,10 +1,11 @@
 'use client';
 
-import { useEffect, useState, use } from 'react';
+import { useEffect, useState, use, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { hostAPI, scheduleAPI } from '@/lib/api';
-import type { Host, Schedule } from '@/types';
-import { ArrowLeft, Power, PowerOff, RefreshCw, Edit, Calendar, Trash2, Plus, Server, Clock, Monitor, Wifi, WifiOff, ChevronRight } from 'lucide-react';
+import type { Host, Schedule, EnergyDataPoint } from '@/types';
+import { ArrowLeft, Power, PowerOff, RefreshCw, Edit, Calendar, Trash2, Plus, Server, Clock, Monitor, Wifi, WifiOff, ChevronRight, Zap } from 'lucide-react';
+import EnergyChart from '@/components/EnergyChart';
 
 const DAYS_OF_WEEK = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Daily'];
 
@@ -17,6 +18,9 @@ export default function HostDetail({ params }: { params: Promise<{ id: string }>
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [actionLoading, setActionLoading] = useState(false);
+  const [energyData, setEnergyData] = useState<EnergyDataPoint[]>([]);
+  const [energyDays, setEnergyDays] = useState(7);
+  const [energyLoading, setEnergyLoading] = useState(false);
   const [showScheduleForm, setShowScheduleForm] = useState(false);
   const [editingSchedule, setEditingSchedule] = useState<Schedule | null>(null);
   const [scheduleForm, setScheduleForm] = useState({
@@ -30,6 +34,28 @@ export default function HostDetail({ params }: { params: Promise<{ id: string }>
     loadHost();
     loadSchedules();
   }, [hostId]);
+
+  const loadEnergyData = useCallback(async (days?: number) => {
+    if (!host?.prometheus_metric) return;
+    try {
+      setEnergyLoading(true);
+      const result = await hostAPI.getEnergyData(hostId, days || energyDays);
+      setEnergyData(result.data);
+      if (days) setEnergyDays(days);
+    } catch (error) {
+      console.error('Failed to load energy data:', error);
+      setEnergyData([]);
+    } finally {
+      setEnergyLoading(false);
+    }
+  }, [hostId, host?.prometheus_metric, energyDays]);
+
+  useEffect(() => {
+    if (host?.prometheus_metric) {
+      setEnergyDays(host.energy_days_range || 7);
+      loadEnergyData(host.energy_days_range || 7);
+    }
+  }, [host?.prometheus_metric]);
 
   const loadHost = async () => {
     try {
@@ -457,6 +483,29 @@ export default function HostDetail({ params }: { params: Promise<{ id: string }>
             </div>
           </div>
         </div>
+
+        {/* Energy Monitoring Chart */}
+        {host.prometheus_metric && (
+          <div className="mt-5 bg-white rounded-xl border border-gray-200/80 shadow-sm animate-slide-up" style={{ animationDelay: '180ms' }}>
+            <div className="p-5">
+              <div className="flex items-center gap-2 mb-4">
+                <div className="w-8 h-8 rounded-lg bg-green-50 flex items-center justify-center">
+                  <Zap className="w-4 h-4 text-green-600" />
+                </div>
+                <div>
+                  <h2 className="text-sm font-semibold text-gray-900 uppercase tracking-wide">Energy Consumption</h2>
+                  <p className="text-xs text-gray-400">Query: <span className="font-mono">{host.prometheus_metric}</span></p>
+                </div>
+              </div>
+              <EnergyChart
+                data={energyData}
+                days={energyDays}
+                onDaysChange={(d) => loadEnergyData(d)}
+                loading={energyLoading}
+              />
+            </div>
+          </div>
+        )}
       </main>
     </div>
   );

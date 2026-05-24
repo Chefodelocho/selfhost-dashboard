@@ -1,16 +1,21 @@
 'use client';
 
-import { useEffect, useState } from 'react';
-import { hostAPI, connectToSSE } from '@/lib/api';
-import type { Host } from '@/types';
-import { Power, PowerOff, RefreshCw, Plus, Server, Wifi, WifiOff, Clock, Monitor, ChevronRight } from 'lucide-react';
+import { useEffect, useState, useCallback } from 'react';
+import { hostAPI, scheduleAPI, connectToSSE } from '@/lib/api';
+import type { Host, Schedule, EnergyDataPoint } from '@/types';
+import { Power, PowerOff, RefreshCw, Plus, Server, Wifi, WifiOff, Clock, Monitor, ChevronRight, Calendar, Zap } from 'lucide-react';
+import EnergySparkline from '@/components/EnergySparkline';
+
+const DAYS_OF_WEEK = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Daily'];
 
 export default function Dashboard() {
   const [hosts, setHosts] = useState<Host[]>([]);
+  const [schedules, setSchedules] = useState<Schedule[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [currentTime, setCurrentTime] = useState<Date | null>(null);
   const [actionLoading, setActionLoading] = useState<number | null>(null);
+  const [energyData, setEnergyData] = useState<Record<number, { data: EnergyDataPoint[]; avg: number }>>({});
 
   useEffect(() => {
     setCurrentTime(new Date());
@@ -44,11 +49,37 @@ export default function Dashboard() {
     };
   }, []);
 
+  const loadEnergyForHosts = useCallback(async (hosts: Host[]) => {
+    const hostsEnergy = hosts.filter(h => h.prometheus_metric);
+    const results: Record<number, { data: EnergyDataPoint[]; avg: number }> = {};
+
+    await Promise.all(
+      hostsEnergy.map(async (host) => {
+        try {
+          const response = await hostAPI.getEnergyData(host.id, 1);
+          const values = response.data.map(d => d.value).filter(v => !isNaN(v));
+          const avg = values.length > 0 ? values.reduce((a, b) => a + b, 0) / values.length : 0;
+          results[host.id] = { data: response.data, avg };
+        } catch {
+          // Silently skip if Prometheus is not available
+        }
+      })
+    );
+
+    setEnergyData(results);
+  }, []);
+
   const loadHosts = async () => {
     try {
       setLoading(true);
       const data = await hostAPI.getAll();
       setHosts(data);
+      // Load schedules and energy data in parallel
+      const [schedData] = await Promise.all([
+        scheduleAPI.getAll().catch(() => []),
+        loadEnergyForHosts(data),
+      ]);
+      setSchedules(schedData as Schedule[]);
     } catch (error) {
       console.error('Failed to load hosts:', error);
     } finally {
@@ -61,6 +92,7 @@ export default function Dashboard() {
       setRefreshing(true);
       const data = await hostAPI.getAll();
       setHosts(data);
+      loadEnergyForHosts(data);
     } catch (error) {
       console.error('Failed to refresh statuses:', error);
     } finally {
@@ -108,6 +140,8 @@ export default function Dashboard() {
       setActionLoading(null);
     }
   };
+
+  const getHostSchedules = (hostId: number) => schedules.filter(s => s.host_id === hostId && s.enabled);
 
   const onlineCount = hosts.filter(h => h.status === 'online').length;
   const offlineCount = hosts.filter(h => h.status === 'offline').length;
@@ -210,105 +244,143 @@ export default function Dashboard() {
           </div>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-5">
-            {hosts.map((host, index) => (
-              <div
-                key={host.id}
-                className="group bg-white rounded-xl border border-gray-200/80 shadow-sm hover:shadow-md hover:border-gray-300/80 transition-all duration-200 animate-slide-up"
-                style={{ animationDelay: `${index * 60}ms` }}
-              >
-                <div className="p-5">
-                  {/* Card header */}
-                  <div className="flex items-start justify-between mb-4">
-                    <div className="flex items-center gap-3">
-                      <div className={`w-10 h-10 rounded-xl flex items-center justify-center transition-colors ${
-                        host.status === 'online'
-                          ? 'bg-green-50 text-green-600'
-                          : host.status === 'offline'
-                          ? 'bg-red-50 text-red-500'
-                          : 'bg-gray-100 text-gray-400'
+            {hosts.map((host, index) => {
+              const hostSchedules = getHostSchedules(host.id);
+              const hostEnergy = energyData[host.id];
+
+              return (
+                <div
+                  key={host.id}
+                  className="group bg-white rounded-xl border border-gray-200/80 shadow-sm hover:shadow-md hover:border-gray-300/80 transition-all duration-200 animate-slide-up"
+                  style={{ animationDelay: `${index * 60}ms` }}
+                >
+                  <div className="p-5">
+                    {/* Card header */}
+                    <div className="flex items-start justify-between mb-4">
+                      <div className="flex items-center gap-3">
+                        <div className={`w-10 h-10 rounded-xl flex items-center justify-center transition-colors ${
+                          host.status === 'online'
+                            ? 'bg-green-50 text-green-600'
+                            : host.status === 'offline'
+                            ? 'bg-red-50 text-red-500'
+                            : 'bg-gray-100 text-gray-400'
+                        }`}>
+                          <Server className="w-5 h-5" />
+                        </div>
+                        <div>
+                          <h3 className="font-semibold text-gray-900 leading-tight">{host.name}</h3>
+                          <p className="text-xs text-gray-500 mt-0.5 font-mono">{host.ip_address}</p>
+                        </div>
+                      </div>
+                      <div className={`flex items-center gap-1.5 px-2 py-1 rounded-full text-[11px] font-semibold uppercase tracking-wide ${
+                        host.status === 'online' ? 'bg-green-50 text-green-700 ring-1 ring-green-600/20' :
+                        host.status === 'offline' ? 'bg-red-50 text-red-700 ring-1 ring-red-600/20' :
+                        'bg-gray-100 text-gray-600 ring-1 ring-gray-500/20'
                       }`}>
-                        <Server className="w-5 h-5" />
-                      </div>
-                      <div>
-                        <h3 className="font-semibold text-gray-900 leading-tight">{host.name}</h3>
-                        <p className="text-xs text-gray-500 mt-0.5 font-mono">{host.ip_address}</p>
+                        {host.status === 'online' && <div className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse-online"></div>}
+                        {host.status === 'offline' && <WifiOff className="w-3 h-3" />}
+                        {host.status === 'unknown' && <div className="w-1.5 h-1.5 rounded-full bg-gray-400"></div>}
+                        {host.status || 'unknown'}
                       </div>
                     </div>
-                    <div className={`flex items-center gap-1.5 px-2 py-1 rounded-full text-[11px] font-semibold uppercase tracking-wide ${
-                      host.status === 'online' ? 'bg-green-50 text-green-700 ring-1 ring-green-600/20' :
-                      host.status === 'offline' ? 'bg-red-50 text-red-700 ring-1 ring-red-600/20' :
-                      'bg-gray-100 text-gray-600 ring-1 ring-gray-500/20'
-                    }`}>
-                      {host.status === 'online' && <div className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse-online"></div>}
-                      {host.status === 'offline' && <WifiOff className="w-3 h-3" />}
-                      {host.status === 'unknown' && <div className="w-1.5 h-1.5 rounded-full bg-gray-400"></div>}
-                      {host.status || 'unknown'}
+
+                    {/* Description */}
+                    {host.description && (
+                      <p className="text-sm text-gray-500 mb-3 line-clamp-2">{host.description}</p>
+                    )}
+
+                    {/* Energy sparkline */}
+                    {hostEnergy && hostEnergy.data.length > 0 && (
+                      <div className="mb-3 p-2.5 bg-blue-50/50 rounded-lg border border-blue-100/50">
+                        <div className="flex items-center gap-1.5 mb-1">
+                          <Zap className="w-3 h-3 text-blue-500" />
+                          <span className="text-[10px] font-medium text-blue-600 uppercase tracking-wide">Energy (1d)</span>
+                        </div>
+                        <EnergySparkline data={hostEnergy.data} avgWatts={hostEnergy.avg} />
+                      </div>
+                    )}
+
+                    {/* Schedules */}
+                    {hostSchedules.length > 0 && (
+                      <div className="mb-3">
+                        <div className="flex items-center gap-1.5 mb-1.5">
+                          <Calendar className="w-3 h-3 text-gray-400" />
+                          <span className="text-[10px] font-medium text-gray-500 uppercase tracking-wide">Schedules</span>
+                        </div>
+                        <div className="flex flex-wrap gap-1">
+                          {hostSchedules.map((s) => (
+                            <span
+                              key={s.id}
+                              className="inline-flex items-center gap-1 px-1.5 py-0.5 bg-gray-100 rounded text-[10px] text-gray-600"
+                            >
+                              {DAYS_OF_WEEK[s.day_of_week]}
+                              {s.power_on_time && <span className="text-green-600">↑{s.power_on_time}</span>}
+                              {s.power_off_time && <span className="text-red-500">↓{s.power_off_time}</span>}
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Meta info */}
+                    <div className="flex items-center gap-3 text-[11px] text-gray-400 mb-4">
+                      <span className="font-mono">MAC: {host.mac_address}</span>
+                      {host.last_checked && (
+                        <>
+                          <span>·</span>
+                          <span>{new Date(host.last_checked).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })}</span>
+                        </>
+                      )}
+                    </div>
+
+                    {/* Action buttons */}
+                    <div className="flex gap-2">
+                      {host.status === 'offline' && (
+                        <button
+                          onClick={() => sendWoL(host.id)}
+                          disabled={actionLoading === host.id}
+                          className="flex-1 flex items-center justify-center gap-2 px-3 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-all text-sm font-medium disabled:opacity-50 shadow-sm shadow-green-600/20"
+                        >
+                          <Power className="w-3.5 h-3.5" />
+                          Wake
+                        </button>
+                      )}
+                      {host.status === 'online' && (
+                        <>
+                          <button
+                            onClick={() => rebootHost(host.id)}
+                            disabled={actionLoading === host.id}
+                            className="flex-1 flex items-center justify-center gap-2 px-3 py-2 bg-amber-500 text-white rounded-lg hover:bg-amber-600 transition-all text-sm font-medium disabled:opacity-50 shadow-sm shadow-amber-500/20"
+                          >
+                            <RefreshCw className={`w-3.5 h-3.5 ${actionLoading === host.id ? 'animate-spin' : ''}`} />
+                            Reboot
+                          </button>
+                          <button
+                            onClick={() => shutdownHost(host.id)}
+                            disabled={actionLoading === host.id}
+                            className="flex-1 flex items-center justify-center gap-2 px-3 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-all text-sm font-medium disabled:opacity-50 shadow-sm shadow-red-600/20"
+                          >
+                            <PowerOff className="w-3.5 h-3.5" />
+                            Shutdown
+                          </button>
+                        </>
+                      )}
                     </div>
                   </div>
 
-                  {/* Description */}
-                  {host.description && (
-                    <p className="text-sm text-gray-500 mb-3 line-clamp-2">{host.description}</p>
-                  )}
-
-                  {/* Meta info */}
-                  <div className="flex items-center gap-3 text-[11px] text-gray-400 mb-4">
-                    <span className="font-mono">MAC: {host.mac_address}</span>
-                    {host.last_checked && (
-                      <>
-                        <span>·</span>
-                        <span>{new Date(host.last_checked).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })}</span>
-                      </>
-                    )}
-                  </div>
-
-                  {/* Action buttons */}
-                  <div className="flex gap-2">
-                    {host.status === 'offline' && (
-                      <button
-                        onClick={() => sendWoL(host.id)}
-                        disabled={actionLoading === host.id}
-                        className="flex-1 flex items-center justify-center gap-2 px-3 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-all text-sm font-medium disabled:opacity-50 shadow-sm shadow-green-600/20"
-                      >
-                        <Power className="w-3.5 h-3.5" />
-                        Wake
-                      </button>
-                    )}
-                    {host.status === 'online' && (
-                      <>
-                        <button
-                          onClick={() => rebootHost(host.id)}
-                          disabled={actionLoading === host.id}
-                          className="flex-1 flex items-center justify-center gap-2 px-3 py-2 bg-amber-500 text-white rounded-lg hover:bg-amber-600 transition-all text-sm font-medium disabled:opacity-50 shadow-sm shadow-amber-500/20"
-                        >
-                          <RefreshCw className={`w-3.5 h-3.5 ${actionLoading === host.id ? 'animate-spin' : ''}`} />
-                          Reboot
-                        </button>
-                        <button
-                          onClick={() => shutdownHost(host.id)}
-                          disabled={actionLoading === host.id}
-                          className="flex-1 flex items-center justify-center gap-2 px-3 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-all text-sm font-medium disabled:opacity-50 shadow-sm shadow-red-600/20"
-                        >
-                          <PowerOff className="w-3.5 h-3.5" />
-                          Shutdown
-                        </button>
-                      </>
-                    )}
+                  {/* Card footer */}
+                  <div className="px-5 py-3 border-t border-gray-100 bg-gray-50/50 rounded-b-xl">
+                    <a
+                      href={`/hosts/${host.id}`}
+                      className="flex items-center justify-between text-sm text-gray-500 hover:text-blue-600 transition-colors group/link"
+                    >
+                      <span>View details</span>
+                      <ChevronRight className="w-4 h-4 group-hover/link:translate-x-0.5 transition-transform" />
+                    </a>
                   </div>
                 </div>
-
-                {/* Card footer */}
-                <div className="px-5 py-3 border-t border-gray-100 bg-gray-50/50 rounded-b-xl">
-                  <a
-                    href={`/hosts/${host.id}`}
-                    className="flex items-center justify-between text-sm text-gray-500 hover:text-blue-600 transition-colors group/link"
-                  >
-                    <span>View details</span>
-                    <ChevronRight className="w-4 h-4 group-hover/link:translate-x-0.5 transition-transform" />
-                  </a>
-                </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         )}
       </main>

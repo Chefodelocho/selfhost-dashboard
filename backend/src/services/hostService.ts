@@ -22,8 +22,8 @@ export class HostService {
    */
   static createHost(data: CreateHostDTO): Host {
     const result = db.prepare(
-      `INSERT INTO hosts (name, ip_address, mac_address, broadcast_address, ssh_username, ssh_password, ssh_auth_type, ssh_port, shutdown_command, reboot_command, description)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+      `INSERT INTO hosts (name, ip_address, mac_address, broadcast_address, ssh_username, ssh_password, ssh_auth_type, ssh_port, shutdown_command, reboot_command, description, prometheus_metric, energy_days_range)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
     ).run(
       data.name,
       data.ip_address,
@@ -35,7 +35,9 @@ export class HostService {
       data.ssh_port || 22,
       data.shutdown_command || 'sudo shutdown -h now',
       data.reboot_command || 'sudo reboot',
-      data.description || null
+      data.description || null,
+      data.prometheus_metric || null,
+      data.energy_days_range || 7
     );
 
     const host = this.getHostById(result.lastInsertRowid as number);
@@ -101,6 +103,14 @@ export class HostService {
     if (data.description !== undefined) {
       updates.push('description = ?');
       values.push(data.description);
+    }
+    if (data.prometheus_metric !== undefined) {
+      updates.push('prometheus_metric = ?');
+      values.push(data.prometheus_metric);
+    }
+    if (data.energy_days_range !== undefined) {
+      updates.push('energy_days_range = ?');
+      values.push(data.energy_days_range);
     }
 
     updates.push('updated_at = CURRENT_TIMESTAMP');

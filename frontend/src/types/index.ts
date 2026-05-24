@@ -11,6 +11,8 @@ export interface Host {
   shutdown_command?: string;
   reboot_command?: string;
   description?: string;
+  prometheus_metric?: string;
+  energy_days_range?: number;
   created_at: string;
   updated_at: string;
   status?: 'online' | 'offline' | 'unknown';
@@ -29,6 +31,8 @@ export interface CreateHostDTO {
   shutdown_command?: string;
   reboot_command?: string;
   description?: string;
+  prometheus_metric?: string;
+  energy_days_range?: number;
 }
 
 export interface UpdateHostDTO {
@@ -43,6 +47,8 @@ export interface UpdateHostDTO {
   shutdown_command?: string;
   reboot_command?: string;
   description?: string;
+  prometheus_metric?: string;
+  energy_days_range?: number;
 }
 
 export interface Schedule {
@@ -90,4 +96,18 @@ export interface WoLResponse {
 export interface SSHResponse {
   success: boolean;
   message: string;
+}
+
+export interface EnergyDataPoint {
+  timestamp: number;
+  value: number;
+}
+
+export interface EnergyDataResponse {
+  host_id: number;
+  metric: string;
+  instance: string;
+  days: number;
+  step: string;
+  data: EnergyDataPoint[];
 }

@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { hostAPI } from '@/lib/api';
 import type { CreateHostDTO, UpdateHostDTO, Host } from '@/types';
-import { ArrowLeft, Save, Trash2, Server, Shield, Wifi, Key, Terminal } from 'lucide-react';
+import { ArrowLeft, Save, Trash2, Server, Shield, Wifi, Key, Terminal, Zap } from 'lucide-react';
 
 export default function HostForm({ hostId }: { hostId?: number }) {
   const router = useRouter();
@@ -22,6 +22,8 @@ export default function HostForm({ hostId }: { hostId?: number }) {
     shutdown_command: 'sudo shutdown -h now',
     reboot_command: 'sudo reboot',
     description: '',
+    prometheus_metric: '',
+    energy_days_range: 7,
   });
 
   useEffect(() => {
@@ -46,6 +48,8 @@ export default function HostForm({ hostId }: { hostId?: number }) {
         shutdown_command: host.shutdown_command || 'sudo shutdown -h now',
         reboot_command: host.reboot_command || 'sudo reboot',
         description: host.description || '',
+        prometheus_metric: host.prometheus_metric || '',
+        energy_days_range: host.energy_days_range || 7,
       });
     } catch (error) {
       console.error('Failed to load host:', error);
@@ -373,6 +377,61 @@ export default function HostForm({ hostId }: { hostId?: number }) {
                     className="w-full px-3 py-2.5 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all text-sm font-mono"
                     placeholder="sudo reboot"
                   />
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Energy Monitoring Section */}
+          <div className="bg-white rounded-xl border border-gray-200/80 shadow-sm animate-slide-up" style={{ animationDelay: '160ms' }}>
+            <div className="p-5">
+              <div className="flex items-center gap-2 mb-5">
+                <div className="w-8 h-8 rounded-lg bg-green-50 flex items-center justify-center">
+                  <Zap className="w-4 h-4 text-green-600" />
+                </div>
+                <div>
+                  <h2 className="text-sm font-semibold text-gray-900 uppercase tracking-wide">Energy Monitoring</h2>
+                  <p className="text-xs text-gray-400">Optional — requires Prometheus server</p>
+                </div>
+              </div>
+
+              <div className="space-y-4">
+                <div>
+                  <label htmlFor="prometheus_metric" className="block text-sm font-medium text-gray-700 mb-1.5">
+                    Prometheus Metric
+                  </label>
+                  <input
+                    type="text"
+                    id="prometheus_metric"
+                    name="prometheus_metric"
+                    value={formData.prometheus_metric}
+                    onChange={handleChange}
+                    className="w-full px-3 py-2.5 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all text-sm font-mono"
+                    placeholder="e.g., energy_watts"
+                  />
+                  <p className="text-xs text-gray-400 mt-1">
+                    Full PromQL metric expression with labels, e.g. <code className="bg-gray-100 px-1 rounded text-[11px]">cem_active_power_watts{"{phase=\"l1\"}"}</code>
+                  </p>
+                </div>
+
+                <div>
+                  <label htmlFor="energy_days_range" className="block text-sm font-medium text-gray-700 mb-1.5">
+                    Default Days Range
+                  </label>
+                  <div className="flex items-center gap-3">
+                    <input
+                      type="range"
+                      id="energy_days_range"
+                      name="energy_days_range"
+                      min="1"
+                      max="15"
+                      value={formData.energy_days_range}
+                      onChange={(e) => setFormData(prev => ({ ...prev, energy_days_range: parseInt(e.target.value) }))}
+                      className="flex-1 h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-blue-600"
+                    />
+                    <span className="text-sm font-medium text-gray-700 w-12 text-right">{formData.energy_days_range}d</span>
+                  </div>
+                  <p className="text-xs text-gray-400 mt-1">Number of days to show in the energy chart (1-15)</p>
                 </div>
               </div>
             </div>

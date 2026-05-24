@@ -3,6 +3,7 @@ import { HostService } from '../services/hostService';
 import { WoLService } from '../services/wolService';
 import { SSHService } from '../services/sshService';
 import { StatusService } from '../services/statusService';
+import { PrometheusService } from '../services/prometheusService';
 import { CreateHostDTO, UpdateHostDTO, SSHCommandRequest } from '../types';
 import db from '../models/database';
 
@@ -303,6 +304,49 @@ router.get('/:id/history', (req: Request, res: Response) => {
     res.json(history);
   } catch (error) {
     res.status(500).json({ error: 'Failed to fetch status history' });
+  }
+});
+
+/**
+ * GET /api/hosts/:id/energy
+ * Get energy consumption data from Prometheus
+ */
+router.get('/:id/energy', async (req: Request, res: Response) => {
+  const timestamp = new Date().toISOString();
+  console.log(`\n[${timestamp}] [ENERGY] GET /api/hosts/${req.params.id}/energy`);
+
+  try {
+    const id = parseInt(Array.isArray(req.params.id) ? req.params.id[0] : req.params.id);
+    const host = HostService.getHostById(id);
+
+    if (!host) {
+      console.log(`[ENERGY] Host with id=${id} not found`);
+      return res.status(404).json({ error: 'Host not found' });
+    }
+
+    if (!host.prometheus_metric) {
+      console.log(`[ENERGY] No prometheus_metric configured for host id=${id}`);
+      return res.status(400).json({ error: 'Energy monitoring not configured for this host. Set a Prometheus metric in host settings.' });
+    }
+
+    const days = parseInt(req.query.days as string) || host.energy_days_range || 7;
+    console.log(`[ENERGY] Host: ${host.name} (${host.ip_address}), Metric: ${host.prometheus_metric}, Days: ${days}`);
+
+    const result = await PrometheusService.queryEnergyMetric(
+      id,
+      host.prometheus_metric,
+      host.ip_address,
+      days
+    );
+
+    console.log(`[ENERGY] Returning ${result.data.length} data points`);
+    res.json(result);
+  } catch (error) {
+    console.error(`[ENERGY] Error: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    if (error instanceof Error && error.stack) {
+      console.error(`[ENERGY] Stack trace: ${error.stack}`);
+    }
+    res.status(500).json({ error: `Failed to fetch energy data: ${error instanceof Error ? error.message : 'Unknown error'}` });
   }
 });
 

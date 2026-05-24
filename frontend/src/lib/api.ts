@@ -9,6 +9,7 @@ import type {
   HostStatus,
   WoLResponse,
   SSHResponse,
+  EnergyDataResponse,
 } from '@/types';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api';
@@ -74,6 +75,8 @@ export const hostAPI = {
     fetchAPI<HostStatus>(`/hosts/${id}/status`),
   getHistory: (id: number, limit: number = 100) =>
     fetchAPI<StatusHistory[]>(`/hosts/${id}/history?limit=${limit}`),
+  getEnergyData: (id: number, days?: number) =>
+    fetchAPI<EnergyDataResponse>(`/hosts/${id}/energy${days ? `?days=${days}` : ''}`),
 };
 
 // Schedule API

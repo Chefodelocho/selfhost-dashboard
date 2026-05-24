@@ -91,4 +91,18 @@ try {
   // Column already exists
 }
 
+// Add prometheus_metric column if it doesn't exist
+try {
+  db.exec(`ALTER TABLE hosts ADD COLUMN prometheus_metric TEXT`);
+} catch (e) {
+  // Column already exists
+}
+
+// Add energy_days_range column if it doesn't exist
+try {
+  db.exec(`ALTER TABLE hosts ADD COLUMN energy_days_range INTEGER DEFAULT 7`);
+} catch (e) {
+  // Column already exists
+}
+
 export default db;
