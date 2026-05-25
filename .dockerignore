@@ -1,0 +1,42 @@
+# Dependencies
+**/node_modules
+
+# Build outputs
+backend/dist
+frontend/.next
+
+# Database
+backend/database/*.db
+
+# Environment files
+**/.env
+**/.env.local
+**/.env.development.local
+**/.env.production.local
+
+# IDE
+.vscode
+.idea
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Git
+.git
+.gitignore
+
+# Docker
+Dockerfile
+docker-compose.yml
+.dockerignore
+
+# Plans / docs
+plans/
+*.md
+!README.md
+
+# Logs
+*.log
