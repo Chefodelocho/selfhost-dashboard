@@ -16,6 +16,10 @@ export const metadata: Metadata = {
   title: "SelfHost Dashboard",
   description: "Manage your LAN server devices with Wake on LAN, shutdown, reboot, and scheduling",
   manifest: "/manifest.json",
+  icons: {
+    icon: "/favicon.ico",
+    apple: "/apple-touch-icon.png",
+  },
   appleWebApp: {
     capable: true,
     statusBarStyle: "default",

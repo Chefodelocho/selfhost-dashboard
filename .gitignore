@@ -1,0 +1,38 @@
+# Dependencies
+node_modules/
+**/node_modules/
+
+# Build outputs
+backend/dist/
+frontend/.next/
+
+# Database
+backend/database/*.db
+data/
+
+# Environment files (contain secrets)
+.env
+.env.*
+!.env.example
+!.env.docker.example
+backend/.env
+backend/.env.*
+backend/!.env.example
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+npm-debug.log*
+
+# Plans (internal)
+plans/
