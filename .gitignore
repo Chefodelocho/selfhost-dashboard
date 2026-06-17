@@ -6,9 +6,13 @@ node_modules/
 backend/dist/
 frontend/.next/
 
-# Database
-backend/database/*.db
-data/*.db
+# Database (runtime SQLite stores). Ignore the WHOLE directory so the live DB
+# and its WAL/SHM sidecar files (e.g. dashboard.db-wal, dashboard.db-shm) are
+# never tracked or shown as modified by git. Note: .gitignore does NOT untrack
+# files that were committed earlier — those must be removed with:
+#   git rm --cached <path>
+backend/database/
+data/
 
 # Environment files (contain secrets)
 .env
