@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { hostAPI } from '@/lib/api';
 import type { CreateHostDTO, UpdateHostDTO, Host } from '@/types';
 import { ArrowLeft, Save, Trash2, Server, Shield, Wifi, Key, Terminal, Zap } from 'lucide-react';
+import ThemeToggle from '@/components/ThemeToggle';
 
 export default function HostForm({ hostId }: { hostId?: number }) {
   const router = useRouter();
@@ -110,8 +111,8 @@ export default function HostForm({ hostId }: { hostId?: number }) {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <div className="flex flex-col items-center gap-4">
-          <div className="w-12 h-12 rounded-full border-4 border-blue-100 border-t-blue-600 animate-spin"></div>
-          <p className="text-sm text-gray-500 font-medium">Loading host...</p>
+          <div className="w-12 h-12 rounded-full border-4 border-blue-100 border-t-blue-600 animate-spin dark:border-gray-700 dark:border-t-blue-500"></div>
+          <p className="text-sm text-gray-500 font-medium dark:text-gray-400">Loading host...</p>
         </div>
       </div>
     );
@@ -120,45 +121,46 @@ export default function HostForm({ hostId }: { hostId?: number }) {
   return (
     <div className="min-h-screen">
       {/* Header */}
-      <header className="sticky top-0 z-10 backdrop-blur-xl bg-white/70 border-b border-gray-200/50">
+      <header className="sticky top-0 z-10 backdrop-blur-xl bg-white/70 border-b border-gray-200/50 dark:bg-gray-900/70 dark:border-gray-700/50">
         <div className="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-14">
             <button
               onClick={() => router.push('/')}
-              className="flex items-center gap-2 text-gray-500 hover:text-gray-900 transition-colors text-sm"
+              className="flex items-center gap-2 text-gray-500 hover:text-gray-900 transition-colors text-sm dark:text-gray-400 dark:hover:text-gray-100"
             >
               <ArrowLeft className="w-4 h-4" />
               <span className="hidden sm:inline">Back to Dashboard</span>
               <span className="sm:hidden">Back</span>
             </button>
+            <ThemeToggle />
           </div>
         </div>
       </header>
 
       <main className="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
         <div className="mb-6 animate-fade-in">
-          <h1 className="text-2xl font-bold text-gray-900">
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">
             {hostId ? 'Edit Host' : 'Add New Host'}
           </h1>
-          <p className="text-sm text-gray-500 mt-1">
+          <p className="text-sm text-gray-500 mt-1 dark:text-gray-400">
             {hostId ? 'Update host configuration' : 'Configure a new device to manage'}
           </p>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-5">
           {/* Basic Info Section */}
-          <div className="bg-white rounded-xl border border-gray-200/80 shadow-sm animate-slide-up">
+          <div className="bg-white rounded-xl border border-gray-200/80 shadow-sm animate-slide-up dark:bg-gray-800 dark:border-gray-700/80">
             <div className="p-5">
               <div className="flex items-center gap-2 mb-5">
-                <div className="w-8 h-8 rounded-lg bg-blue-50 flex items-center justify-center">
-                  <Server className="w-4 h-4 text-blue-600" />
+                <div className="w-8 h-8 rounded-lg bg-blue-50 flex items-center justify-center dark:bg-blue-900/30">
+                  <Server className="w-4 h-4 text-blue-600 dark:text-blue-400" />
                 </div>
-                <h2 className="text-sm font-semibold text-gray-900 uppercase tracking-wide">Basic Information</h2>
+                <h2 className="text-sm font-semibold text-gray-900 uppercase tracking-wide dark:text-gray-100">Basic Information</h2>
               </div>
 
               <div className="space-y-4">
                 <div>
-                  <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-1.5">
+                  <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-1.5 dark:text-gray-300">
                     Name <span className="text-red-500">*</span>
                   </label>
                   <input
@@ -168,14 +170,14 @@ export default function HostForm({ hostId }: { hostId?: number }) {
                     value={formData.name}
                     onChange={handleChange}
                     required
-                    className="w-full px-3 py-2.5 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all text-sm"
+                    className="w-full px-3 py-2.5 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all text-sm dark:border-gray-600"
                     placeholder="e.g., Home Server"
                   />
                 </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
-                    <label htmlFor="ip_address" className="block text-sm font-medium text-gray-700 mb-1.5">
+                    <label htmlFor="ip_address" className="block text-sm font-medium text-gray-700 mb-1.5 dark:text-gray-300">
                       IP Address <span className="text-red-500">*</span>
                     </label>
                     <input
@@ -185,12 +187,12 @@ export default function HostForm({ hostId }: { hostId?: number }) {
                       value={formData.ip_address}
                       onChange={handleChange}
                       required
-                      className="w-full px-3 py-2.5 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all text-sm font-mono"
+                      className="w-full px-3 py-2.5 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all text-sm font-mono dark:border-gray-600"
                       placeholder="192.168.1.100"
                     />
                   </div>
                   <div>
-                    <label htmlFor="mac_address" className="block text-sm font-medium text-gray-700 mb-1.5">
+                    <label htmlFor="mac_address" className="block text-sm font-medium text-gray-700 mb-1.5 dark:text-gray-300">
                       MAC Address <span className="text-red-500">*</span>
                     </label>
                     <input
@@ -200,15 +202,15 @@ export default function HostForm({ hostId }: { hostId?: number }) {
                       value={formData.mac_address}
                       onChange={handleChange}
                       required
-                      className="w-full px-3 py-2.5 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all text-sm font-mono"
+                      className="w-full px-3 py-2.5 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all text-sm font-mono dark:border-gray-600"
                       placeholder="00:11:22:33:44:55"
                     />
                   </div>
                 </div>
 
                 <div>
-                  <label htmlFor="broadcast_address" className="block text-sm font-medium text-gray-700 mb-1.5">
-                    Broadcast Address <span className="text-xs text-gray-400 font-normal">(optional)</span>
+                  <label htmlFor="broadcast_address" className="block text-sm font-medium text-gray-700 mb-1.5 dark:text-gray-300">
+                    Broadcast Address <span className="text-xs text-gray-400 font-normal dark:text-gray-500">(optional)</span>
                   </label>
                   <input
                     type="text"
@@ -216,15 +218,15 @@ export default function HostForm({ hostId }: { hostId?: number }) {
                     name="broadcast_address"
                     value={formData.broadcast_address}
                     onChange={handleChange}
-                    className="w-full px-3 py-2.5 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all text-sm font-mono"
+                    className="w-full px-3 py-2.5 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all text-sm font-mono dark:border-gray-600"
                     placeholder="192.168.1.255"
                   />
-                  <p className="text-xs text-gray-400 mt-1">Defaults to 255.255.255.255 if not set</p>
+                  <p className="text-xs text-gray-400 mt-1 dark:text-gray-500">Defaults to 255.255.255.255 if not set</p>
                 </div>
 
                 <div>
-                  <label htmlFor="description" className="block text-sm font-medium text-gray-700 mb-1.5">
-                    Description <span className="text-xs text-gray-400 font-normal">(optional)</span>
+                  <label htmlFor="description" className="block text-sm font-medium text-gray-700 mb-1.5 dark:text-gray-300">
+                    Description <span className="text-xs text-gray-400 font-normal dark:text-gray-500">(optional)</span>
                   </label>
                   <textarea
                     id="description"
@@ -232,7 +234,7 @@ export default function HostForm({ hostId }: { hostId?: number }) {
                     value={formData.description}
                     onChange={handleChange}
                     rows={2}
-                    className="w-full px-3 py-2.5 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all text-sm resize-none"
+                    className="w-full px-3 py-2.5 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all text-sm resize-none dark:border-gray-600"
                     placeholder="Optional description"
                   />
                 </div>
@@ -241,22 +243,22 @@ export default function HostForm({ hostId }: { hostId?: number }) {
           </div>
 
           {/* SSH Configuration Section */}
-          <div className="bg-white rounded-xl border border-gray-200/80 shadow-sm animate-slide-up" style={{ animationDelay: '80ms' }}>
+          <div className="bg-white rounded-xl border border-gray-200/80 shadow-sm animate-slide-up dark:bg-gray-800 dark:border-gray-700/80" style={{ animationDelay: '80ms' }}>
             <div className="p-5">
               <div className="flex items-center gap-2 mb-5">
-                <div className="w-8 h-8 rounded-lg bg-amber-50 flex items-center justify-center">
-                  <Shield className="w-4 h-4 text-amber-600" />
+                <div className="w-8 h-8 rounded-lg bg-amber-50 flex items-center justify-center dark:bg-amber-900/30">
+                  <Shield className="w-4 h-4 text-amber-600 dark:text-amber-400" />
                 </div>
                 <div>
-                  <h2 className="text-sm font-semibold text-gray-900 uppercase tracking-wide">SSH Configuration</h2>
-                  <p className="text-xs text-gray-400">Required for shutdown and reboot commands</p>
+                  <h2 className="text-sm font-semibold text-gray-900 uppercase tracking-wide dark:text-gray-100">SSH Configuration</h2>
+                  <p className="text-xs text-gray-400 dark:text-gray-500">Required for shutdown and reboot commands</p>
                 </div>
               </div>
 
               <div className="space-y-4">
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
-                    <label htmlFor="ssh_auth_type" className="block text-sm font-medium text-gray-700 mb-1.5">
+                    <label htmlFor="ssh_auth_type" className="block text-sm font-medium text-gray-700 mb-1.5 dark:text-gray-300">
                       Authentication Type
                     </label>
                     <select
@@ -264,7 +266,7 @@ export default function HostForm({ hostId }: { hostId?: number }) {
                       name="ssh_auth_type"
                       value={formData.ssh_auth_type}
                       onChange={handleChange}
-                      className="w-full px-3 py-2.5 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all text-sm bg-white"
+                      className="w-full px-3 py-2.5 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all text-sm bg-white dark:bg-gray-800 dark:border-gray-600 dark:text-gray-200"
                     >
                       <option value="password">Password</option>
                       <option value="key">SSH Key</option>
@@ -272,7 +274,7 @@ export default function HostForm({ hostId }: { hostId?: number }) {
                   </div>
 
                   <div>
-                    <label htmlFor="ssh_port" className="block text-sm font-medium text-gray-700 mb-1.5">
+                    <label htmlFor="ssh_port" className="block text-sm font-medium text-gray-700 mb-1.5 dark:text-gray-300">
                       SSH Port
                     </label>
                     <input
@@ -283,13 +285,13 @@ export default function HostForm({ hostId }: { hostId?: number }) {
                       onChange={handleChange}
                       min="1"
                       max="65535"
-                      className="w-full px-3 py-2.5 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all text-sm"
+                      className="w-full px-3 py-2.5 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all text-sm dark:border-gray-600"
                     />
                   </div>
                 </div>
 
                 <div>
-                  <label htmlFor="ssh_username" className="block text-sm font-medium text-gray-700 mb-1.5">
+                  <label htmlFor="ssh_username" className="block text-sm font-medium text-gray-700 mb-1.5 dark:text-gray-300">
                     SSH Username
                   </label>
                   <input
@@ -298,14 +300,14 @@ export default function HostForm({ hostId }: { hostId?: number }) {
                     name="ssh_username"
                     value={formData.ssh_username}
                     onChange={handleChange}
-                    className="w-full px-3 py-2.5 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all text-sm"
+                    className="w-full px-3 py-2.5 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all text-sm dark:border-gray-600"
                     placeholder="e.g., root"
                   />
                 </div>
 
                 {formData.ssh_auth_type === 'password' ? (
                   <div>
-                    <label htmlFor="ssh_password" className="block text-sm font-medium text-gray-700 mb-1.5">
+                    <label htmlFor="ssh_password" className="block text-sm font-medium text-gray-700 mb-1.5 dark:text-gray-300">
                       SSH Password
                     </label>
                     <input
@@ -314,18 +316,18 @@ export default function HostForm({ hostId }: { hostId?: number }) {
                       name="ssh_password"
                       value={formData.ssh_password}
                       onChange={handleChange}
-                      className="w-full px-3 py-2.5 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all text-sm"
+                      className="w-full px-3 py-2.5 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all text-sm dark:border-gray-600"
                       placeholder="SSH password"
                     />
                   </div>
                 ) : (
-                  <div className="p-3 bg-blue-50 border border-blue-200/80 rounded-lg">
+                  <div className="p-3 bg-blue-50 border border-blue-200/80 rounded-lg dark:bg-blue-900/20 dark:border-blue-800/30">
                     <div className="flex items-start gap-2">
-                      <Key className="w-4 h-4 text-blue-600 mt-0.5 shrink-0" />
+                      <Key className="w-4 h-4 text-blue-600 mt-0.5 shrink-0 dark:text-blue-400" />
                       <div>
-                        <p className="text-sm text-blue-800 font-medium">SSH Key Authentication</p>
-                        <p className="text-xs text-blue-600 mt-1">
-                          The SSH key must be configured on the server running this dashboard. Set <code className="bg-blue-100 px-1 rounded text-[11px]">SSH_PRIVATE_KEY_PATH</code> in the backend <code className="bg-blue-100 px-1 rounded text-[11px]">.env</code> file.
+                        <p className="text-sm text-blue-800 font-medium dark:text-blue-300">SSH Key Authentication</p>
+                        <p className="text-xs text-blue-600 mt-1 dark:text-blue-400">
+                          The SSH key must be configured on the server running this dashboard. Set <code className="bg-blue-100 px-1 rounded text-[11px] dark:bg-blue-900/50">SSH_PRIVATE_KEY_PATH</code> in the backend <code className="bg-blue-100 px-1 rounded text-[11px] dark:bg-blue-900/50">.env</code> file.
                         </p>
                       </div>
                     </div>
@@ -336,21 +338,21 @@ export default function HostForm({ hostId }: { hostId?: number }) {
           </div>
 
           {/* Commands Section */}
-          <div className="bg-white rounded-xl border border-gray-200/80 shadow-sm animate-slide-up" style={{ animationDelay: '120ms' }}>
+          <div className="bg-white rounded-xl border border-gray-200/80 shadow-sm animate-slide-up dark:bg-gray-800 dark:border-gray-700/80" style={{ animationDelay: '120ms' }}>
             <div className="p-5">
               <div className="flex items-center gap-2 mb-5">
-                <div className="w-8 h-8 rounded-lg bg-purple-50 flex items-center justify-center">
-                  <Terminal className="w-4 h-4 text-purple-600" />
+                <div className="w-8 h-8 rounded-lg bg-purple-50 flex items-center justify-center dark:bg-purple-900/30">
+                  <Terminal className="w-4 h-4 text-purple-600 dark:text-purple-400" />
                 </div>
                 <div>
-                  <h2 className="text-sm font-semibold text-gray-900 uppercase tracking-wide">Commands</h2>
-                  <p className="text-xs text-gray-400">Customize shutdown and reboot commands</p>
+                  <h2 className="text-sm font-semibold text-gray-900 uppercase tracking-wide dark:text-gray-100">Commands</h2>
+                  <p className="text-xs text-gray-400 dark:text-gray-500">Customize shutdown and reboot commands</p>
                 </div>
               </div>
 
               <div className="space-y-4">
                 <div>
-                  <label htmlFor="shutdown_command" className="block text-sm font-medium text-gray-700 mb-1.5">
+                  <label htmlFor="shutdown_command" className="block text-sm font-medium text-gray-700 mb-1.5 dark:text-gray-300">
                     Shutdown Command
                   </label>
                   <input
@@ -359,13 +361,13 @@ export default function HostForm({ hostId }: { hostId?: number }) {
                     name="shutdown_command"
                     value={formData.shutdown_command}
                     onChange={handleChange}
-                    className="w-full px-3 py-2.5 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all text-sm font-mono"
+                    className="w-full px-3 py-2.5 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all text-sm font-mono dark:border-gray-600"
                     placeholder="sudo shutdown -h now"
                   />
                 </div>
 
                 <div>
-                  <label htmlFor="reboot_command" className="block text-sm font-medium text-gray-700 mb-1.5">
+                  <label htmlFor="reboot_command" className="block text-sm font-medium text-gray-700 mb-1.5 dark:text-gray-300">
                     Reboot Command
                   </label>
                   <input
@@ -374,7 +376,7 @@ export default function HostForm({ hostId }: { hostId?: number }) {
                     name="reboot_command"
                     value={formData.reboot_command}
                     onChange={handleChange}
-                    className="w-full px-3 py-2.5 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all text-sm font-mono"
+                    className="w-full px-3 py-2.5 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all text-sm font-mono dark:border-gray-600"
                     placeholder="sudo reboot"
                   />
                 </div>
@@ -383,21 +385,21 @@ export default function HostForm({ hostId }: { hostId?: number }) {
           </div>
 
           {/* Energy Monitoring Section */}
-          <div className="bg-white rounded-xl border border-gray-200/80 shadow-sm animate-slide-up" style={{ animationDelay: '160ms' }}>
+          <div className="bg-white rounded-xl border border-gray-200/80 shadow-sm animate-slide-up dark:bg-gray-800 dark:border-gray-700/80" style={{ animationDelay: '160ms' }}>
             <div className="p-5">
               <div className="flex items-center gap-2 mb-5">
-                <div className="w-8 h-8 rounded-lg bg-green-50 flex items-center justify-center">
-                  <Zap className="w-4 h-4 text-green-600" />
+                <div className="w-8 h-8 rounded-lg bg-green-50 flex items-center justify-center dark:bg-green-900/30">
+                  <Zap className="w-4 h-4 text-green-600 dark:text-green-400" />
                 </div>
                 <div>
-                  <h2 className="text-sm font-semibold text-gray-900 uppercase tracking-wide">Energy Monitoring</h2>
-                  <p className="text-xs text-gray-400">Optional — requires Prometheus server</p>
+                  <h2 className="text-sm font-semibold text-gray-900 uppercase tracking-wide dark:text-gray-100">Energy Monitoring</h2>
+                  <p className="text-xs text-gray-400 dark:text-gray-500">Optional — requires Prometheus server</p>
                 </div>
               </div>
 
               <div className="space-y-4">
                 <div>
-                  <label htmlFor="prometheus_metric" className="block text-sm font-medium text-gray-700 mb-1.5">
+                  <label htmlFor="prometheus_metric" className="block text-sm font-medium text-gray-700 mb-1.5 dark:text-gray-300">
                     Prometheus Metric
                   </label>
                   <input
@@ -406,16 +408,16 @@ export default function HostForm({ hostId }: { hostId?: number }) {
                     name="prometheus_metric"
                     value={formData.prometheus_metric}
                     onChange={handleChange}
-                    className="w-full px-3 py-2.5 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all text-sm font-mono"
+                    className="w-full px-3 py-2.5 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all text-sm font-mono dark:border-gray-600"
                     placeholder="e.g., energy_watts"
                   />
-                  <p className="text-xs text-gray-400 mt-1">
-                    Full PromQL metric expression with labels, e.g. <code className="bg-gray-100 px-1 rounded text-[11px]">cem_active_power_watts{"{phase=\"l1\"}"}</code>
+                  <p className="text-xs text-gray-400 mt-1 dark:text-gray-500">
+                    Full PromQL metric expression with labels, e.g. <code className="bg-gray-100 px-1 rounded text-[11px] dark:bg-gray-700">cem_active_power_watts{"{phase=\"l1\"}"}</code>
                   </p>
                 </div>
 
                 <div>
-                  <label htmlFor="energy_days_range" className="block text-sm font-medium text-gray-700 mb-1.5">
+                  <label htmlFor="energy_days_range" className="block text-sm font-medium text-gray-700 mb-1.5 dark:text-gray-300">
                     Default Days Range
                   </label>
                   <div className="flex items-center gap-3">
@@ -427,11 +429,11 @@ export default function HostForm({ hostId }: { hostId?: number }) {
                       max="15"
                       value={formData.energy_days_range}
                       onChange={(e) => setFormData(prev => ({ ...prev, energy_days_range: parseInt(e.target.value) }))}
-                      className="flex-1 h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-blue-600"
+                      className="flex-1 h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-blue-600 dark:bg-gray-600"
                     />
-                    <span className="text-sm font-medium text-gray-700 w-12 text-right">{formData.energy_days_range}d</span>
+                    <span className="text-sm font-medium text-gray-700 w-12 text-right dark:text-gray-300">{formData.energy_days_range}d</span>
                   </div>
-                  <p className="text-xs text-gray-400 mt-1">Number of days to show in the energy chart (1-15)</p>
+                  <p className="text-xs text-gray-400 mt-1 dark:text-gray-500">Number of days to show in the energy chart (1-15)</p>
                 </div>
               </div>
             </div>
@@ -452,7 +454,7 @@ export default function HostForm({ hostId }: { hostId?: number }) {
                 type="button"
                 onClick={handleDelete}
                 disabled={deleting}
-                className="flex items-center gap-2 px-4 py-2.5 bg-white text-red-600 rounded-xl hover:bg-red-50 hover:text-red-700 disabled:opacity-50 transition-all border border-red-200 font-medium"
+                className="flex items-center gap-2 px-4 py-2.5 bg-white text-red-600 rounded-xl hover:bg-red-50 hover:text-red-700 disabled:opacity-50 transition-all border border-red-200 font-medium dark:bg-gray-800 dark:text-red-400 dark:border-red-800 dark:hover:bg-red-900/30 dark:hover:text-red-300"
               >
                 <Trash2 className="w-4 h-4" />
                 {deleting ? 'Deleting...' : 'Delete'}

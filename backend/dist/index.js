@@ -45,6 +45,9 @@ const events_1 = __importStar(require("./routes/events"));
 const schedulerService_1 = require("./services/schedulerService");
 // Load environment variables
 dotenv_1.default.config();
+// Set timezone for scheduler (defaults to Europe/Madrid)
+process.env.TZ = process.env.TZ || 'Europe/Madrid';
+console.log(`Timezone set to: ${process.env.TZ}`);
 const app = (0, express_1.default)();
 const PORT = process.env.PORT || 3001;
 // Middleware
@@ -68,6 +71,22 @@ schedulerService_1.SchedulerService.start();
 app.listen(PORT, () => {
     console.log(`Backend server running on port ${PORT}`);
     console.log(`API available at http://localhost:${PORT}/api`);
+});
+// Global error handlers — last line of defense so that a single async error or
+// EventEmitter 'error' does not kill the backend process (which previously left
+// it dead with no restart). The primary crash sources are handled at their
+// origin (see the ssh2 Client error listener in sshService, and the .catch()
+// guards on the cron/SSE async paths), so these should rarely fire.
+//
+// We intentionally LOG AND CONTINUE rather than exit, to maximise uptime for
+// this self-hosted dashboard. The start.sh supervisor still guarantees an
+// automatic restart if the process ever truly exits (OOM, fatal error, etc.).
+process.on('unhandledRejection', (reason, promise) => {
+    console.error('[FATAL] Unhandled Promise Rejection (suppressed):', reason);
+});
+process.on('uncaughtException', (error) => {
+    console.error('[FATAL] Uncaught Exception (suppressed):');
+    console.error(error?.stack || error);
 });
 // Graceful shutdown
 process.on('SIGINT', () => {

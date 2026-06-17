@@ -66,8 +66,8 @@ export default function EnergySparkline({ data, avgWatts }: EnergySparklineProps
       </div>
       {avgWatts !== undefined && (
         <div className="text-right shrink-0">
-          <span className="text-xs font-semibold text-gray-700">{avgWatts.toFixed(0)}</span>
-          <span className="text-[10px] text-gray-400 ml-0.5">W avg</span>
+          <span className="text-xs font-semibold text-gray-700 dark:text-gray-300">{avgWatts.toFixed(0)}</span>
+          <span className="text-[10px] text-gray-400 ml-0.5 dark:text-gray-500">W avg</span>
         </div>
       )}
     </div>

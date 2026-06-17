@@ -129,6 +129,30 @@
   }
 }
 
+/* Dark mode form inputs */
+.dark input[type="text"],
+.dark input[type="password"],
+.dark input[type="number"],
+.dark input[type="time"],
+.dark input[type="range"],
+.dark textarea,
+.dark select {
+  background-color: var(--color-gray-800);
+  border-color: var(--color-gray-600);
+  color: var(--color-gray-100);
+}
+
+.dark input::placeholder,
+.dark textarea::placeholder {
+  color: var(--color-gray-500);
+}
+
+.dark input:focus,
+.dark textarea:focus,
+.dark select:focus {
+  border-color: var(--color-blue-500);
+}
+
 /* Custom animations */
 @keyframes pulse-online {
   0%, 100% { opacity: 1; }

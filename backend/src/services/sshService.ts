@@ -6,6 +6,30 @@ import { SSHCommandRequest } from '../types';
 
 export class SSHService {
   /**
+   * Attach an error listener to the underlying ssh2 Client so that socket
+   * errors (e.g. EPIPE when the remote host shuts down/reboots, or any network
+   * blip) are handled instead of crashing the whole backend.
+   *
+   * In Node.js, an EventEmitter that emits an 'error' event with NO listener
+   * throws synchronously — this was the exact root cause of the backend dying
+   * (see container log: "throw er; // Unhandled 'error' event", "Error: write
+   * EPIPE", "Emit'ted 'error' event on Client instance"). The try/catch in
+   * executeCommand/testConnection only catches awaited promise rejections, not
+   * this asynchronous socket 'error' event.
+   */
+  private static attachConnectionErrorHandler(ssh: NodeSSH): void {
+    try {
+      const client = (ssh as any).getConnection?.();
+      client?.on?.('error', (err: Error) => {
+        console.error(`[SSH] Client socket error (suppressed): ${err.message}`);
+      });
+    } catch {
+      // getConnection() unavailable in this node-ssh version — the global
+      // error handlers in index.ts act as a backstop.
+    }
+  }
+
+  /**
    * Execute SSH command on remote host
    */
   static async executeCommand(
@@ -17,6 +41,7 @@ export class SSHService {
     password?: string
   ): Promise<{ success: boolean; message: string }> {
     const ssh = new NodeSSH();
+    this.attachConnectionErrorHandler(ssh);
     const timestamp = new Date().toISOString();
 
     console.log(`\n[${timestamp}] [SSH] executeCommand called`);
@@ -130,6 +155,7 @@ export class SSHService {
     password?: string
   ): Promise<{ success: boolean; message: string }> {
     const ssh = new NodeSSH();
+    this.attachConnectionErrorHandler(ssh);
     const timestamp = new Date().toISOString();
 
     console.log(`\n[${timestamp}] [SSH] testConnection called`);

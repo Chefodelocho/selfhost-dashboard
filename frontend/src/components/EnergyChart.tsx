@@ -10,6 +10,7 @@ import {
   CartesianGrid,
 } from 'recharts';
 import type { EnergyDataPoint } from '@/types';
+import { useTheme } from './ThemeProvider';
 
 interface EnergyChartProps {
   data: EnergyDataPoint[];
@@ -35,6 +36,7 @@ function formatValue(value: number): string {
 export default function EnergyChart({ data, days, onDaysChange, loading }: EnergyChartProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const [dims, setDims] = useState({ width: 0, height: 0 });
+  const { theme } = useTheme();
 
   useEffect(() => {
     const container = containerRef.current;
@@ -62,6 +64,8 @@ export default function EnergyChart({ data, days, onDaysChange, loading }: Energ
   const max = values.length > 0 ? Math.max(...values) : 0;
   const min = values.length > 0 ? Math.min(...values) : 0;
 
+  const isDark = theme === 'dark';
+
   return (
     <div>
       {/* Day range selector and stats */}
@@ -74,7 +78,7 @@ export default function EnergyChart({ data, days, onDaysChange, loading }: Energ
               className={`px-2.5 py-1 rounded-md text-xs font-medium transition-all ${
                 days === d
                   ? 'bg-blue-600 text-white shadow-sm'
-                  : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                  : 'bg-gray-100 text-gray-600 hover:bg-gray-200 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600'
               }`}
             >
               {d === 1 ? '1d' : `${d}d`}
@@ -83,10 +87,10 @@ export default function EnergyChart({ data, days, onDaysChange, loading }: Energ
         </div>
 
         {values.length > 0 && (
-          <div className="flex items-center gap-4 text-xs text-gray-500">
-            <span>Avg: <span className="font-semibold text-gray-700">{avg.toFixed(1)} W</span></span>
-            <span>Max: <span className="font-semibold text-gray-700">{max.toFixed(1)} W</span></span>
-            <span>Min: <span className="font-semibold text-gray-700">{min.toFixed(1)} W</span></span>
+          <div className="flex items-center gap-4 text-xs text-gray-500 dark:text-gray-400">
+            <span>Avg: <span className="font-semibold text-gray-700 dark:text-gray-300">{avg.toFixed(1)} W</span></span>
+            <span>Max: <span className="font-semibold text-gray-700 dark:text-gray-300">{max.toFixed(1)} W</span></span>
+            <span>Min: <span className="font-semibold text-gray-700 dark:text-gray-300">{min.toFixed(1)} W</span></span>
           </div>
         )}
       </div>
@@ -94,10 +98,10 @@ export default function EnergyChart({ data, days, onDaysChange, loading }: Energ
       {/* Chart */}
       {loading ? (
         <div className="h-64 flex items-center justify-center">
-          <div className="w-8 h-8 rounded-full border-3 border-blue-100 border-t-blue-600 animate-spin"></div>
+          <div className="w-8 h-8 rounded-full border-3 border-blue-100 border-t-blue-600 animate-spin dark:border-gray-700 dark:border-t-blue-500"></div>
         </div>
       ) : data.length === 0 ? (
-        <div className="h-64 flex flex-col items-center justify-center text-gray-400">
+        <div className="h-64 flex flex-col items-center justify-center text-gray-400 dark:text-gray-500">
           <svg className="w-8 h-8 mb-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M3 13.125C3 12.504 3.504 12 4.125 12h2.25c.621 0 1.125.504 1.125 1.125v6.75C7.5 20.496 6.996 21 6.375 21h-2.25A1.125 1.125 0 013 19.875v-6.75zM9.75 8.625c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125v11.25c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V8.625zM16.5 4.125c0-.621.504-1.125 1.125-1.125h2.25C20.496 3 21 3.504 21 4.125v15.75c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V4.125z" />
           </svg>
@@ -114,19 +118,19 @@ export default function EnergyChart({ data, days, onDaysChange, loading }: Energ
                   <stop offset="95%" stopColor="#3b82f6" stopOpacity={0} />
                 </linearGradient>
               </defs>
-              <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
+              <CartesianGrid strokeDasharray="3 3" stroke={isDark ? '#374151' : '#f1f5f9'} />
               <XAxis
                 dataKey="time"
                 type="number"
                 domain={['dataMin', 'dataMax']}
                 tickFormatter={(ts) => formatTime(ts, days)}
-                tick={{ fontSize: 11, fill: '#94a3b8' }}
+                tick={{ fontSize: 11, fill: isDark ? '#9ca3af' : '#94a3b8' }}
                 tickLine={false}
-                axisLine={{ stroke: '#e2e8f0' }}
+                axisLine={{ stroke: isDark ? '#4b5563' : '#e2e8f0' }}
                 minTickGap={40}
               />
               <YAxis
-                tick={{ fontSize: 11, fill: '#94a3b8' }}
+                tick={{ fontSize: 11, fill: isDark ? '#9ca3af' : '#94a3b8' }}
                 tickLine={false}
                 axisLine={false}
                 tickFormatter={(v) => `${v} W`}
@@ -134,13 +138,14 @@ export default function EnergyChart({ data, days, onDaysChange, loading }: Energ
               />
               <Tooltip
                 contentStyle={{
-                  backgroundColor: 'white',
-                  border: '1px solid #e2e8f0',
+                  backgroundColor: isDark ? '#1f2937' : 'white',
+                  border: `1px solid ${isDark ? '#4b5563' : '#e2e8f0'}`,
                   borderRadius: '8px',
                   boxShadow: '0 4px 6px -1px rgba(0,0,0,0.1)',
                   fontSize: '12px',
+                  color: isDark ? '#e5e7eb' : undefined,
                 }}
-                labelStyle={{ color: '#64748b', fontWeight: 500 }}
+                labelStyle={{ color: isDark ? '#9ca3af' : '#64748b', fontWeight: 500 }}
                 formatter={(value: unknown) => [formatValue(Number(value)), 'Power']}
                 labelFormatter={(ts) => {
                   return new Date(ts).toLocaleString('es-ES', {
@@ -156,7 +161,7 @@ export default function EnergyChart({ data, days, onDaysChange, loading }: Energ
                 strokeWidth={2}
                 fill="url(#energyGradient)"
                 dot={false}
-                activeDot={{ r: 4, fill: '#3b82f6', stroke: 'white', strokeWidth: 2 }}
+                activeDot={{ r: 4, fill: '#3b82f6', stroke: isDark ? '#1f2937' : 'white', strokeWidth: 2 }}
               />
             </AreaChart>
           )}

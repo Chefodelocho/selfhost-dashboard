@@ -8,6 +8,7 @@ const hostService_1 = require("../services/hostService");
 const wolService_1 = require("../services/wolService");
 const sshService_1 = require("../services/sshService");
 const statusService_1 = require("../services/statusService");
+const prometheusService_1 = require("../services/prometheusService");
 const database_1 = __importDefault(require("../models/database"));
 const router = (0, express_1.Router)();
 /**
@@ -112,19 +113,30 @@ router.delete('/:id', (req, res) => {
  * Send Wake on LAN packet
  */
 router.post('/:id/wol', async (req, res) => {
+    const timestamp = new Date().toISOString();
+    console.log(`\n[${timestamp}] [WoL] POST /api/hosts/${req.params.id}/wol`);
     try {
         const id = parseInt(Array.isArray(req.params.id) ? req.params.id[0] : req.params.id);
         const host = hostService_1.HostService.getHostById(id);
         if (!host) {
+            console.log(`[WoL] Host with id=${id} not found`);
             return res.status(404).json({ error: 'Host not found' });
         }
+        console.log(`[WoL] Host: ${host.name} (${host.ip_address}), id=${host.id}`);
+        console.log(`[WoL] MAC: ${host.mac_address}, Broadcast: ${host.broadcast_address || '(none)'}`);
         const result = await wolService_1.WoLService.sendWoL({
             mac_address: host.mac_address,
             ip_address: host.ip_address,
+            broadcast_address: host.broadcast_address || undefined,
         });
+        console.log(`[WoL] Result: success=${result.success}, message="${result.message}"`);
         res.json(result);
     }
     catch (error) {
+        console.error(`[WoL] Unhandled error: ${error instanceof Error ? error.message : 'Unknown error'}`);
+        if (error instanceof Error && error.stack) {
+            console.error(`[WoL] Stack trace: ${error.stack}`);
+        }
         res.status(500).json({ error: 'Failed to send WoL packet' });
     }
 });
@@ -133,23 +145,36 @@ router.post('/:id/wol', async (req, res) => {
  * Shutdown host via SSH
  */
 router.post('/:id/shutdown', async (req, res) => {
+    const timestamp = new Date().toISOString();
+    console.log(`\n[${timestamp}] [SHUTDOWN] POST /api/hosts/${req.params.id}/shutdown`);
     try {
         const id = parseInt(Array.isArray(req.params.id) ? req.params.id[0] : req.params.id);
         const host = hostService_1.HostService.getHostById(id);
         if (!host) {
+            console.log(`[SHUTDOWN] Host with id=${id} not found`);
             return res.status(404).json({ error: 'Host not found' });
         }
+        console.log(`[SHUTDOWN] Host: ${host.name} (${host.ip_address}), id=${host.id}`);
         if (!host.ssh_username) {
+            console.log(`[SHUTDOWN] No SSH username configured for host id=${id}`);
             return res.status(400).json({ error: 'SSH username not configured for this host' });
         }
         const authType = host.ssh_auth_type || 'password';
+        console.log(`[SHUTDOWN] Auth type: ${authType}, SSH port: ${host.ssh_port || 22}`);
+        console.log(`[SHUTDOWN] Shutdown command: ${host.shutdown_command || 'sudo shutdown -h now (default)'}`);
         if (authType === 'password' && !host.ssh_password) {
+            console.log(`[SHUTDOWN] No SSH password configured for host id=${id}`);
             return res.status(400).json({ error: 'SSH password not configured for this host' });
         }
-        const result = await sshService_1.SSHService.executeCommand(host.ip_address, host.ssh_port || 22, host.ssh_username, authType, { command: 'shutdown' }, host.ssh_password);
+        const result = await sshService_1.SSHService.executeCommand(host.ip_address, host.ssh_port || 22, host.ssh_username, authType, { command: 'shutdown', custom_command: host.shutdown_command || undefined }, host.ssh_password);
+        console.log(`[SHUTDOWN] Result: success=${result.success}, message="${result.message}"`);
         res.json(result);
     }
     catch (error) {
+        console.error(`[SHUTDOWN] Unhandled error: ${error instanceof Error ? error.message : 'Unknown error'}`);
+        if (error instanceof Error && error.stack) {
+            console.error(`[SHUTDOWN] Stack trace: ${error.stack}`);
+        }
         res.status(500).json({ error: 'Failed to shutdown host' });
     }
 });
@@ -158,23 +183,36 @@ router.post('/:id/shutdown', async (req, res) => {
  * Reboot host via SSH
  */
 router.post('/:id/reboot', async (req, res) => {
+    const timestamp = new Date().toISOString();
+    console.log(`\n[${timestamp}] [REBOOT] POST /api/hosts/${req.params.id}/reboot`);
     try {
         const id = parseInt(Array.isArray(req.params.id) ? req.params.id[0] : req.params.id);
         const host = hostService_1.HostService.getHostById(id);
         if (!host) {
+            console.log(`[REBOOT] Host with id=${id} not found`);
             return res.status(404).json({ error: 'Host not found' });
         }
+        console.log(`[REBOOT] Host: ${host.name} (${host.ip_address}), id=${host.id}`);
         if (!host.ssh_username) {
+            console.log(`[REBOOT] No SSH username configured for host id=${id}`);
             return res.status(400).json({ error: 'SSH username not configured for this host' });
         }
         const authType = host.ssh_auth_type || 'password';
+        console.log(`[REBOOT] Auth type: ${authType}, SSH port: ${host.ssh_port || 22}`);
+        console.log(`[REBOOT] Reboot command: ${host.reboot_command || 'sudo reboot (default)'}`);
         if (authType === 'password' && !host.ssh_password) {
+            console.log(`[REBOOT] No SSH password configured for host id=${id}`);
             return res.status(400).json({ error: 'SSH password not configured for this host' });
         }
-        const result = await sshService_1.SSHService.executeCommand(host.ip_address, host.ssh_port || 22, host.ssh_username, authType, { command: 'reboot' }, host.ssh_password);
+        const result = await sshService_1.SSHService.executeCommand(host.ip_address, host.ssh_port || 22, host.ssh_username, authType, { command: 'reboot', custom_command: host.reboot_command || undefined }, host.ssh_password);
+        console.log(`[REBOOT] Result: success=${result.success}, message="${result.message}"`);
         res.json(result);
     }
     catch (error) {
+        console.error(`[REBOOT] Unhandled error: ${error instanceof Error ? error.message : 'Unknown error'}`);
+        if (error instanceof Error && error.stack) {
+            console.error(`[REBOOT] Stack trace: ${error.stack}`);
+        }
         res.status(500).json({ error: 'Failed to reboot host' });
     }
 });
@@ -215,6 +253,38 @@ router.get('/:id/history', (req, res) => {
     }
     catch (error) {
         res.status(500).json({ error: 'Failed to fetch status history' });
+    }
+});
+/**
+ * GET /api/hosts/:id/energy
+ * Get energy consumption data from Prometheus
+ */
+router.get('/:id/energy', async (req, res) => {
+    const timestamp = new Date().toISOString();
+    console.log(`\n[${timestamp}] [ENERGY] GET /api/hosts/${req.params.id}/energy`);
+    try {
+        const id = parseInt(Array.isArray(req.params.id) ? req.params.id[0] : req.params.id);
+        const host = hostService_1.HostService.getHostById(id);
+        if (!host) {
+            console.log(`[ENERGY] Host with id=${id} not found`);
+            return res.status(404).json({ error: 'Host not found' });
+        }
+        if (!host.prometheus_metric) {
+            console.log(`[ENERGY] No prometheus_metric configured for host id=${id}`);
+            return res.status(400).json({ error: 'Energy monitoring not configured for this host. Set a Prometheus metric in host settings.' });
+        }
+        const days = parseInt(req.query.days) || host.energy_days_range || 7;
+        console.log(`[ENERGY] Host: ${host.name} (${host.ip_address}), Metric: ${host.prometheus_metric}, Days: ${days}`);
+        const result = await prometheusService_1.PrometheusService.queryEnergyMetric(id, host.prometheus_metric, host.ip_address, days);
+        console.log(`[ENERGY] Returning ${result.data.length} data points`);
+        res.json(result);
+    }
+    catch (error) {
+        console.error(`[ENERGY] Error: ${error instanceof Error ? error.message : 'Unknown error'}`);
+        if (error instanceof Error && error.stack) {
+            console.error(`[ENERGY] Stack trace: ${error.stack}`);
+        }
+        res.status(500).json({ error: `Failed to fetch energy data: ${error instanceof Error ? error.message : 'Unknown error'}` });
     }
 });
 exports.default = router;

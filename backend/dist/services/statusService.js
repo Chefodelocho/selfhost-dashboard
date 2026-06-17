@@ -44,7 +44,7 @@ class StatusService {
      * Get latest status for a specific host
      */
     static getLatestStatus(hostId) {
-        const row = database_1.default.prepare(`SELECT host_id, status, checked_at as last_checked
+        const row = database_1.default.prepare(`SELECT host_id, status, strftime('%Y-%m-%dT%H:%M:%SZ', checked_at) as last_checked
        FROM status_history
        WHERE host_id = ?
        ORDER BY checked_at DESC
@@ -55,7 +55,7 @@ class StatusService {
      * Get status history for a host
      */
     static getStatusHistory(hostId, limit = 100) {
-        return database_1.default.prepare(`SELECT id, host_id, status, checked_at
+        return database_1.default.prepare(`SELECT id, host_id, status, strftime('%Y-%m-%dT%H:%M:%SZ', checked_at) as checked_at
        FROM status_history
        WHERE host_id = ?
        ORDER BY checked_at DESC

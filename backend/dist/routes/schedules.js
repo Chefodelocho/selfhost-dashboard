@@ -44,9 +44,9 @@ router.post('/', (req, res) => {
         if (data.host_id === undefined || data.day_of_week === undefined) {
             return res.status(400).json({ error: 'Missing required fields: host_id, day_of_week' });
         }
-        // Validate day_of_week
-        if (data.day_of_week < 0 || data.day_of_week > 6) {
-            return res.status(400).json({ error: 'day_of_week must be between 0 and 6' });
+        // Validate day_of_week (0-6 = Sunday-Saturday, 7 = Daily)
+        if (data.day_of_week < 0 || data.day_of_week > 7) {
+            return res.status(400).json({ error: 'day_of_week must be between 0 and 7' });
         }
         const schedule = scheduleService_1.ScheduleService.createSchedule(data);
         res.status(201).json(schedule);
@@ -63,9 +63,9 @@ router.put('/:id', (req, res) => {
     try {
         const id = parseInt(Array.isArray(req.params.id) ? req.params.id[0] : req.params.id);
         const data = req.body;
-        // Validate day_of_week if provided
-        if (data.day_of_week !== undefined && (data.day_of_week < 0 || data.day_of_week > 6)) {
-            return res.status(400).json({ error: 'day_of_week must be between 0 and 6' });
+        // Validate day_of_week if provided (0-6 = Sunday-Saturday, 7 = Daily)
+        if (data.day_of_week !== undefined && (data.day_of_week < 0 || data.day_of_week > 7)) {
+            return res.status(400).json({ error: 'day_of_week must be between 0 and 7' });
         }
         const schedule = scheduleService_1.ScheduleService.updateSchedule(id, data);
         if (!schedule) {

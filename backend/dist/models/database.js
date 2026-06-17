@@ -6,8 +6,8 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const better_sqlite3_1 = __importDefault(require("better-sqlite3"));
 const path_1 = __importDefault(require("path"));
 const fs_1 = __importDefault(require("fs"));
-const DB_DIR = path_1.default.join(__dirname, '../../database');
-const DB_PATH = path_1.default.join(DB_DIR, 'dashboard.db');
+const DB_PATH = process.env.DATABASE_PATH || path_1.default.join(__dirname, '../../database', 'dashboard.db');
+const DB_DIR = path_1.default.dirname(DB_PATH);
 // Ensure database directory exists
 if (!fs_1.default.existsSync(DB_DIR)) {
     fs_1.default.mkdirSync(DB_DIR, { recursive: true });
@@ -22,10 +22,13 @@ db.exec(`
     name TEXT NOT NULL,
     ip_address TEXT NOT NULL,
     mac_address TEXT NOT NULL,
+    broadcast_address TEXT,
     ssh_username TEXT,
     ssh_password TEXT,
     ssh_auth_type TEXT DEFAULT 'password',
     ssh_port INTEGER DEFAULT 22,
+    shutdown_command TEXT DEFAULT 'sudo shutdown -h now',
+    reboot_command TEXT DEFAULT 'sudo reboot',
     description TEXT,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
@@ -66,5 +69,39 @@ try {
 }
 catch (e) {
     // Column doesn't exist or can't be dropped
+}
+// Add shutdown_command and reboot_command columns if they don't exist
+try {
+    db.exec(`ALTER TABLE hosts ADD COLUMN shutdown_command TEXT DEFAULT 'sudo shutdown -h now'`);
+}
+catch (e) {
+    // Column already exists
+}
+try {
+    db.exec(`ALTER TABLE hosts ADD COLUMN reboot_command TEXT DEFAULT 'sudo reboot'`);
+}
+catch (e) {
+    // Column already exists
+}
+// Add broadcast_address column if it doesn't exist
+try {
+    db.exec(`ALTER TABLE hosts ADD COLUMN broadcast_address TEXT`);
+}
+catch (e) {
+    // Column already exists
+}
+// Add prometheus_metric column if it doesn't exist
+try {
+    db.exec(`ALTER TABLE hosts ADD COLUMN prometheus_metric TEXT`);
+}
+catch (e) {
+    // Column already exists
+}
+// Add energy_days_range column if it doesn't exist
+try {
+    db.exec(`ALTER TABLE hosts ADD COLUMN energy_days_range INTEGER DEFAULT 7`);
+}
+catch (e) {
+    // Column already exists
 }
 exports.default = db;

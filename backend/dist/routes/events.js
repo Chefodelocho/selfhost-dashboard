@@ -24,6 +24,10 @@ router.get('/', (req, res) => {
     const { StatusService } = require('../services/statusService');
     StatusService.checkAllHosts().then((statuses) => {
         res.write(`data: ${JSON.stringify({ type: 'status', data: statuses })}\n\n`);
+    }).catch((err) => {
+        // Prevent an unhandled rejection here from crashing the backend. This runs
+        // on every SSE connection, so a transient DB/ping error must be contained.
+        console.error('[SSE] Error sending initial statuses:', err);
     });
     // Remove client on disconnect
     req.on('close', () => {

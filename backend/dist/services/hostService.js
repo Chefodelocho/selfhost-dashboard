@@ -23,8 +23,8 @@ class HostService {
      * Create new host
      */
     static createHost(data) {
-        const result = database_1.default.prepare(`INSERT INTO hosts (name, ip_address, mac_address, ssh_username, ssh_password, ssh_auth_type, ssh_port, description)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?)`).run(data.name, data.ip_address, data.mac_address, data.ssh_username || null, data.ssh_password || null, data.ssh_auth_type || 'password', data.ssh_port || 22, data.description || null);
+        const result = database_1.default.prepare(`INSERT INTO hosts (name, ip_address, mac_address, broadcast_address, ssh_username, ssh_password, ssh_auth_type, ssh_port, shutdown_command, reboot_command, description, prometheus_metric, energy_days_range)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`).run(data.name, data.ip_address, data.mac_address, data.broadcast_address || null, data.ssh_username || null, data.ssh_password || null, data.ssh_auth_type || 'password', data.ssh_port || 22, data.shutdown_command || 'sudo shutdown -h now', data.reboot_command || 'sudo reboot', data.description || null, data.prometheus_metric || null, data.energy_days_range || 7);
         const host = this.getHostById(result.lastInsertRowid);
         if (!host) {
             throw new Error('Failed to create host');
@@ -53,6 +53,10 @@ class HostService {
             updates.push('mac_address = ?');
             values.push(data.mac_address);
         }
+        if (data.broadcast_address !== undefined) {
+            updates.push('broadcast_address = ?');
+            values.push(data.broadcast_address);
+        }
         if (data.ssh_username !== undefined) {
             updates.push('ssh_username = ?');
             values.push(data.ssh_username);
@@ -69,9 +73,25 @@ class HostService {
             updates.push('ssh_port = ?');
             values.push(data.ssh_port);
         }
+        if (data.shutdown_command !== undefined) {
+            updates.push('shutdown_command = ?');
+            values.push(data.shutdown_command);
+        }
+        if (data.reboot_command !== undefined) {
+            updates.push('reboot_command = ?');
+            values.push(data.reboot_command);
+        }
         if (data.description !== undefined) {
             updates.push('description = ?');
             values.push(data.description);
+        }
+        if (data.prometheus_metric !== undefined) {
+            updates.push('prometheus_metric = ?');
+            values.push(data.prometheus_metric);
+        }
+        if (data.energy_days_range !== undefined) {
+            updates.push('energy_days_range = ?');
+            values.push(data.energy_days_range);
         }
         updates.push('updated_at = CURRENT_TIMESTAMP');
         values.push(id);

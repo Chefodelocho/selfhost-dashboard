@@ -46,9 +46,27 @@ class SchedulerService {
      * Start the scheduler service
      */
     static start() {
-        // Check schedules every minute
+        // Check schedules every minute. checkSchedules() is async — wrap it so a
+        // rejection (SSH/WoL/DB error) never becomes an unhandled rejection.
         node_cron_1.default.schedule('* * * * *', () => {
-            this.checkSchedules();
+            this.checkSchedules().catch((err) => {
+                console.error('[Scheduler] Error checking schedules:', err);
+            });
+        });
+        // Clean up old status history daily at 03:00 to prevent unbounded DB
+        // growth (status_history gains ~1 row/host every 30s). This method existed
+        // but was never invoked.
+        node_cron_1.default.schedule('0 3 * * *', () => {
+            try {
+                const { StatusService } = require('./statusService');
+                const deleted = StatusService.cleanupOldHistory();
+                if (deleted > 0) {
+                    console.log(`[Scheduler] Cleaned up ${deleted} old status history entries`);
+                }
+            }
+            catch (err) {
+                console.error('[Scheduler] Error cleaning up status history:', err);
+            }
         });
         console.log('Scheduler service started');
     }
@@ -59,16 +77,20 @@ class SchedulerService {
         const now = new Date();
         const currentDay = now.getDay(); // 0-6 (Sunday-Saturday)
         const currentTime = now.toTimeString().slice(0, 5); // HH:MM
-        // Get all enabled schedules for current day
-        const schedules = database_1.default.prepare(`SELECT s.*, h.name, h.mac_address, h.ip_address, h.ssh_username, h.ssh_password, h.ssh_auth_type, h.ssh_port
+        // Get all enabled schedules for current day (including daily schedules where day_of_week = 7)
+        const schedules = database_1.default.prepare(`SELECT s.*, h.name, h.mac_address, h.ip_address, h.broadcast_address, h.ssh_username, h.ssh_password, h.ssh_auth_type, h.ssh_port, h.shutdown_command
        FROM schedules s
        JOIN hosts h ON s.host_id = h.id
-       WHERE s.day_of_week = ? AND s.enabled = 1
+       WHERE (s.day_of_week = ? OR s.day_of_week = 7) AND s.enabled = 1
        AND (s.power_on_time = ? OR s.power_off_time = ?)`).all(currentDay, currentTime, currentTime);
         for (const schedule of schedules) {
             if (schedule.power_on_time === currentTime) {
                 console.log(`Executing scheduled power on for host: ${schedule.name}`);
-                await wolService_1.WoLService.sendWoL({ mac_address: schedule.mac_address });
+                await wolService_1.WoLService.sendWoL({
+                    mac_address: schedule.mac_address,
+                    ip_address: schedule.ip_address,
+                    broadcast_address: schedule.broadcast_address || undefined,
+                });
             }
             if (schedule.power_off_time === currentTime && schedule.ssh_username) {
                 const authType = schedule.ssh_auth_type || 'password';
@@ -77,7 +99,7 @@ class SchedulerService {
                     continue;
                 }
                 console.log(`Executing scheduled power off for host: ${schedule.name}`);
-                await sshService_1.SSHService.executeCommand(schedule.ip_address, schedule.ssh_port, schedule.ssh_username, authType, { command: 'shutdown' }, schedule.ssh_password || undefined);
+                await sshService_1.SSHService.executeCommand(schedule.ip_address, schedule.ssh_port, schedule.ssh_username, authType, { command: 'shutdown', custom_command: schedule.shutdown_command || undefined }, schedule.ssh_password || undefined);
             }
         }
     }
@@ -89,10 +111,16 @@ class SchedulerService {
             this.statusCheckTask.stop();
         }
         this.statusCheckTask = node_cron_1.default.schedule('*/30 * * * * *', async () => {
-            const { StatusService } = await Promise.resolve().then(() => __importStar(require('./statusService')));
-            const statuses = await StatusService.checkAllHosts();
-            if (callback) {
-                callback(statuses);
+            try {
+                const { StatusService } = await Promise.resolve().then(() => __importStar(require('./statusService')));
+                const statuses = await StatusService.checkAllHosts();
+                if (callback) {
+                    callback(statuses);
+                }
+            }
+            catch (err) {
+                // A transient ping/DB error here must never crash the backend.
+                console.error('[StatusMonitor] Error during status check:', err);
             }
         });
         console.log('Status monitoring started');

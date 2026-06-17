@@ -53,7 +53,7 @@ export class StatusService {
    */
   static getLatestStatus(hostId: number): HostStatus | null {
     const row = db.prepare(
-      `SELECT host_id, status, checked_at as last_checked
+      `SELECT host_id, status, strftime('%Y-%m-%dT%H:%M:%SZ', checked_at) as last_checked
        FROM status_history
        WHERE host_id = ?
        ORDER BY checked_at DESC
@@ -73,7 +73,7 @@ export class StatusService {
     checked_at: string;
   }> {
     return db.prepare(
-      `SELECT id, host_id, status, checked_at
+      `SELECT id, host_id, status, strftime('%Y-%m-%dT%H:%M:%SZ', checked_at) as checked_at
        FROM status_history
        WHERE host_id = ?
        ORDER BY checked_at DESC

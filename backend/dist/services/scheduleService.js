@@ -24,7 +24,7 @@ class ScheduleService {
      */
     static createSchedule(data) {
         const result = database_1.default.prepare(`INSERT INTO schedules (host_id, day_of_week, power_on_time, power_off_time, enabled)
-       VALUES (?, ?, ?, ?, ?)`).run(data.host_id, data.day_of_week, data.power_on_time || null, data.power_off_time || null, data.enabled !== undefined ? data.enabled : 1);
+       VALUES (?, ?, ?, ?, ?)`).run(data.host_id, data.day_of_week, data.power_on_time || null, data.power_off_time || null, data.enabled !== undefined ? (data.enabled ? 1 : 0) : 1);
         const schedule = this.getScheduleById(result.lastInsertRowid);
         if (!schedule) {
             throw new Error('Failed to create schedule');
@@ -55,7 +55,7 @@ class ScheduleService {
         }
         if (data.enabled !== undefined) {
             updates.push('enabled = ?');
-            values.push(data.enabled);
+            values.push(data.enabled ? 1 : 0);
         }
         values.push(id);
         database_1.default.prepare(`UPDATE schedules SET ${updates.join(', ')} WHERE id = ?`).run(...values);

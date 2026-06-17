@@ -10,24 +10,35 @@ class WoLService {
      * Send Wake on LAN magic packet
      */
     static async sendWoL(request) {
+        const timestamp = new Date().toISOString();
+        console.log(`\n[${timestamp}] [WoL] sendWoL called`);
+        console.log(`[WoL] Raw MAC address: ${request.mac_address}`);
+        console.log(`[WoL] IP address: ${request.ip_address || '(none)'}`);
+        console.log(`[WoL] Broadcast address: ${request.broadcast_address || '(none)'}`);
         try {
             const macAddress = this.normalizeMacAddress(request.mac_address);
+            console.log(`[WoL] Normalized MAC address: ${macAddress}`);
             const magicPacket = this.createMagicPacket(macAddress);
+            console.log(`[WoL] Magic packet created (${magicPacket.length} bytes)`);
             return new Promise((resolve, reject) => {
                 const socket = dgram_1.default.createSocket('udp4');
                 socket.on('error', (err) => {
+                    console.error(`[WoL] Socket error: ${err.message}`);
                     socket.close();
                     reject(err);
                 });
                 socket.on('listening', () => {
                     socket.setBroadcast(true);
-                    const targetAddress = request.ip_address || this.BROADCAST_ADDRESS;
+                    const targetAddress = request.broadcast_address || request.ip_address || this.BROADCAST_ADDRESS;
+                    console.log(`[WoL] Sending magic packet to ${targetAddress}:${this.WOL_PORT}`);
                     socket.send(magicPacket, this.WOL_PORT, targetAddress, (err) => {
                         socket.close();
                         if (err) {
+                            console.error(`[WoL] Send error: ${err.message}`);
                             reject(err);
                         }
                         else {
+                            console.log(`[WoL] Magic packet sent successfully to ${macAddress} via ${targetAddress}:${this.WOL_PORT}`);
                             resolve({
                                 success: true,
                                 message: `Wake on LAN packet sent to ${macAddress}`
@@ -39,6 +50,10 @@ class WoLService {
             });
         }
         catch (error) {
+            console.error(`[WoL] Error: ${error instanceof Error ? error.message : 'Unknown error'}`);
+            if (error instanceof Error && error.stack) {
+                console.error(`[WoL] Stack trace: ${error.stack}`);
+            }
             return {
                 success: false,
                 message: `Failed to send WoL packet: ${error instanceof Error ? error.message : 'Unknown error'}`

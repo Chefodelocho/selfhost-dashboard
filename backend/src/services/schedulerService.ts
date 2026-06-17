@@ -12,9 +12,27 @@ export class SchedulerService {
    * Start the scheduler service
    */
   static start(): void {
-    // Check schedules every minute
+    // Check schedules every minute. checkSchedules() is async — wrap it so a
+    // rejection (SSH/WoL/DB error) never becomes an unhandled rejection.
     cron.schedule('* * * * *', () => {
-      this.checkSchedules();
+      this.checkSchedules().catch((err: unknown) => {
+        console.error('[Scheduler] Error checking schedules:', err);
+      });
+    });
+
+    // Clean up old status history daily at 03:00 to prevent unbounded DB
+    // growth (status_history gains ~1 row/host every 30s). This method existed
+    // but was never invoked.
+    cron.schedule('0 3 * * *', () => {
+      try {
+        const { StatusService } = require('./statusService');
+        const deleted = StatusService.cleanupOldHistory();
+        if (deleted > 0) {
+          console.log(`[Scheduler] Cleaned up ${deleted} old status history entries`);
+        }
+      } catch (err) {
+        console.error('[Scheduler] Error cleaning up status history:', err);
+      }
     });
 
     console.log('Scheduler service started');
@@ -90,10 +108,15 @@ export class SchedulerService {
     }
 
     this.statusCheckTask = cron.schedule('*/30 * * * * *', async () => {
-      const { StatusService } = await import('./statusService');
-      const statuses = await StatusService.checkAllHosts();
-      if (callback) {
-        callback(statuses);
+      try {
+        const { StatusService } = await import('./statusService');
+        const statuses = await StatusService.checkAllHosts();
+        if (callback) {
+          callback(statuses);
+        }
+      } catch (err) {
+        // A transient ping/DB error here must never crash the backend.
+        console.error('[StatusMonitor] Error during status check:', err);
       }
     });
 

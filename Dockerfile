@@ -68,16 +68,33 @@ ENV TZ=Europe/Madrid
 # Entrypoint script: starts backend then frontend
 COPY <<'SCRIPT' /app/start.sh
 #!/bin/sh
-set -e
+# Supervisor for SelfHost Dashboard.
+#
+# Starts the backend and frontend, and automatically RESTARTS the backend if
+# it ever crashes. Previously the backend ran as a bare background process with
+# a single `wait`, so when it died nothing restarted it: the container kept
+# reporting "up" (because the frontend was still alive) while the backend
+# stayed dead permanently. If the frontend dies here, the container exits so
+# Docker's "restart: unless-stopped" policy restarts the whole stack.
 
 echo "Starting SelfHost Dashboard..."
 
-# Start backend in background (explicitly on port 3001)
-echo "  → Backend (port 3001)"
-cd /app/backend
-PORT=3001 node dist/index.js &
+start_backend() {
+  echo "  → Backend starting (port 3001)"
+  ( cd /app/backend && PORT=3001 exec node dist/index.js ) &
+  BACKEND_PID=$!
+}
 
-# Wait for backend to be ready
+start_frontend() {
+  echo "  → Frontend starting (port 3000)"
+  ( cd /app/frontend && HOSTNAME=0.0.0.0 PORT=3000 exec node server.js ) &
+  FRONTEND_PID=$!
+}
+
+start_backend
+start_frontend
+
+# Wait for backend to be ready (best-effort, non-blocking)
 echo "  → Waiting for backend..."
 for i in $(seq 1 30); do
   if wget -q -O /dev/null http://localhost:3001/api/health 2>/dev/null; then
@@ -87,13 +104,31 @@ for i in $(seq 1 30); do
   sleep 0.5
 done
 
-# Start frontend in foreground (explicitly on port 3000)
-echo "  → Frontend (port 3000)"
-cd /app/frontend
-HOSTNAME=0.0.0.0 PORT=3000 node server.js &
+# Clean shutdown on container signals (docker stop / restart)
+cleanup() {
+  echo "[supervisor] Shutting down..."
+  kill "$BACKEND_PID" "$FRONTEND_PID" 2>/dev/null
+  exit 0
+}
+trap cleanup TERM INT
 
-# Wait for any process to exit
-wait
+# Supervisor loop: restart the backend if it dies, bail out if the frontend dies.
+RESTART_DELAY=3
+while true; do
+  if ! kill -0 "$BACKEND_PID" 2>/dev/null; then
+    echo "[supervisor] Backend (PID $BACKEND_PID) died. Restarting in ${RESTART_DELAY}s..."
+    sleep "$RESTART_DELAY"
+    start_backend
+  fi
+
+  if ! kill -0 "$FRONTEND_PID" 2>/dev/null; then
+    echo "[supervisor] Frontend (PID $FRONTEND_PID) died. Exiting container."
+    kill "$BACKEND_PID" 2>/dev/null || true
+    exit 1
+  fi
+
+  sleep 5
+done
 SCRIPT
 RUN chmod +x /app/start.sh
 
