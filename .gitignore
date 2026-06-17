@@ -8,7 +8,7 @@ frontend/.next/
 
 # Database
 backend/database/*.db
-data/
+data/*.db
 
 # Environment files (contain secrets)
 .env
