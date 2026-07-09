@@ -17,7 +17,7 @@ export default function Dashboard() {
   const [refreshing, setRefreshing] = useState(false);
   const [currentTime, setCurrentTime] = useState<Date | null>(null);
   const [actionLoading, setActionLoading] = useState<number | null>(null);
-  const [energyData, setEnergyData] = useState<Record<number, { data: EnergyDataPoint[]; avg: number }>>({});
+  const [energyData, setEnergyData] = useState<Record<number, { data: EnergyDataPoint[]; avg: number; priceData?: EnergyDataPoint[]; totalKwh?: number; totalCost?: number }>>({});
 
   useEffect(() => {
     setCurrentTime(new Date());
@@ -53,7 +53,7 @@ export default function Dashboard() {
 
   const loadEnergyForHosts = useCallback(async (hosts: Host[]) => {
     const hostsEnergy = hosts.filter(h => h.prometheus_metric);
-    const results: Record<number, { data: EnergyDataPoint[]; avg: number }> = {};
+    const results: Record<number, { data: EnergyDataPoint[]; avg: number; priceData?: EnergyDataPoint[]; totalKwh?: number; totalCost?: number }> = {};
 
     await Promise.all(
       hostsEnergy.map(async (host) => {
@@ -61,7 +61,13 @@ export default function Dashboard() {
           const response = await hostAPI.getEnergyData(host.id, 1);
           const values = response.data.map(d => d.value).filter(v => !isNaN(v));
           const avg = values.length > 0 ? values.reduce((a, b) => a + b, 0) / values.length : 0;
-          results[host.id] = { data: response.data, avg };
+          results[host.id] = {
+            data: response.data,
+            avg,
+            priceData: response.price_data,
+            totalKwh: response.total_kwh,
+            totalCost: response.total_cost,
+          };
         } catch {
           // Silently skip if Prometheus is not available
         }
@@ -300,11 +306,18 @@ export default function Dashboard() {
                     {/* Energy sparkline */}
                     {hostEnergy && hostEnergy.data.length > 0 && (
                       <div className="mb-3 p-2.5 bg-blue-50/50 rounded-lg border border-blue-100/50 dark:bg-blue-900/20 dark:border-blue-800/30">
-                        <div className="flex items-center gap-1.5 mb-1">
-                          <Zap className="w-3 h-3 text-blue-500 dark:text-blue-400" />
-                          <span className="text-[10px] font-medium text-blue-600 uppercase tracking-wide dark:text-blue-300">Energy (1d)</span>
+                        <div className="flex items-center justify-between mb-1">
+                          <div className="flex items-center gap-1.5">
+                            <Zap className="w-3 h-3 text-blue-500 dark:text-blue-400" />
+                            <span className="text-[10px] font-medium text-blue-600 uppercase tracking-wide dark:text-blue-300">Energy (1d)</span>
+                          </div>
+                          {hostEnergy.totalCost !== undefined && (
+                            <span className="text-[10px] font-semibold text-amber-600 dark:text-amber-400">
+                              {hostEnergy.totalCost.toFixed(2)} €
+                            </span>
+                          )}
                         </div>
-                        <EnergySparkline data={hostEnergy.data} avgWatts={hostEnergy.avg} />
+                        <EnergySparkline data={hostEnergy.data} avgWatts={hostEnergy.avg} priceData={hostEnergy.priceData} />
                       </div>
                     )}
 

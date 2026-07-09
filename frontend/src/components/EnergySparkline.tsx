@@ -2,19 +2,36 @@
 
 import { useRef, useState, useEffect } from 'react';
 import {
-  AreaChart,
+  ComposedChart,
   Area,
+  Line,
 } from 'recharts';
 import type { EnergyDataPoint } from '@/types';
 
 interface EnergySparklineProps {
   data: EnergyDataPoint[];
   avgWatts?: number;
+  priceData?: EnergyDataPoint[];
 }
 
-export default function EnergySparkline({ data, avgWatts }: EnergySparklineProps) {
+function normalize(values: number[]): { norm: (number | null)[]; min: number; max: number } {
+  const valid = values.filter((v) => v !== null && !isNaN(v));
+  if (valid.length === 0) return { norm: values.map(() => null), min: 0, max: 0 };
+  const min = Math.min(...valid);
+  const max = Math.max(...valid);
+  const range = max - min || 1;
+  return {
+    norm: values.map((v) => (v === null || isNaN(v) ? null : (v - min) / range)),
+    min,
+    max,
+  };
+}
+
+export default function EnergySparkline({ data, avgWatts, priceData }: EnergySparklineProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const [dims, setDims] = useState({ width: 0, height: 0 });
+
+  const hasPrice = !!priceData && priceData.length > 0;
 
   useEffect(() => {
     const container = containerRef.current;
@@ -33,15 +50,25 @@ export default function EnergySparkline({ data, avgWatts }: EnergySparklineProps
 
   if (data.length === 0) return null;
 
-  const chartData = data.map((point) => ({
-    value: point.value,
-  }));
+  // Normalize power and price so both fit in the same tiny area
+  const powerNorm = normalize(data.map((p) => p.value));
+  let chartData;
+  if (hasPrice) {
+    const priceNorm = normalize(priceData!.map((p) => p.value));
+    // Align price to power timestamps by index (already aligned from backend)
+    chartData = data.map((point, i) => ({
+      power: powerNorm.norm[i],
+      price: priceNorm.norm[i] ?? null,
+    }));
+  } else {
+    chartData = data.map((_, i) => ({ power: powerNorm.norm[i], price: null }));
+  }
 
   return (
     <div className="flex items-center gap-2">
       <div ref={containerRef} className="flex-1 h-8" style={{ minWidth: 0 }}>
         {dims.width > 0 && dims.height > 0 && (
-          <AreaChart
+          <ComposedChart
             width={dims.width}
             height={dims.height}
             data={chartData}
@@ -55,13 +82,24 @@ export default function EnergySparkline({ data, avgWatts }: EnergySparklineProps
             </defs>
             <Area
               type="monotone"
-              dataKey="value"
+              dataKey="power"
               stroke="#3b82f6"
               strokeWidth={1.5}
               fill="url(#sparkGradient)"
               dot={false}
+              isAnimationActive={false}
             />
-          </AreaChart>
+            {hasPrice && (
+              <Line
+                type="monotone"
+                dataKey="price"
+                stroke="#f59e0b"
+                strokeWidth={1}
+                dot={false}
+                isAnimationActive={false}
+              />
+            )}
+          </ComposedChart>
         )}
       </div>
       {avgWatts !== undefined && (

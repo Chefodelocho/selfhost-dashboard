@@ -24,6 +24,7 @@ export default function HostForm({ hostId }: { hostId?: number }) {
     reboot_command: 'sudo reboot',
     description: '',
     prometheus_metric: '',
+    energy_price_metric: '',
     energy_days_range: 7,
   });
 
@@ -50,6 +51,7 @@ export default function HostForm({ hostId }: { hostId?: number }) {
         reboot_command: host.reboot_command || 'sudo reboot',
         description: host.description || '',
         prometheus_metric: host.prometheus_metric || '',
+        energy_price_metric: host.energy_price_metric || '',
         energy_days_range: host.energy_days_range || 7,
       });
     } catch (error) {
@@ -413,6 +415,24 @@ export default function HostForm({ hostId }: { hostId?: number }) {
                   />
                   <p className="text-xs text-gray-400 mt-1 dark:text-gray-500">
                     Full PromQL metric expression with labels, e.g. <code className="bg-gray-100 px-1 rounded text-[11px] dark:bg-gray-700">cem_active_power_watts{"{phase=\"l1\"}"}</code>
+                  </p>
+                </div>
+
+                <div>
+                  <label htmlFor="energy_price_metric" className="block text-sm font-medium text-gray-700 mb-1.5 dark:text-gray-300">
+                    Energy Price Metric <span className="text-xs text-gray-400 font-normal dark:text-gray-500">(optional)</span>
+                  </label>
+                  <input
+                    type="text"
+                    id="energy_price_metric"
+                    name="energy_price_metric"
+                    value={formData.energy_price_metric}
+                    onChange={handleChange}
+                    className="w-full px-3 py-2.5 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all text-sm font-mono dark:border-gray-600"
+                    placeholder="e.g., electricity_price_eur_per_kwh"
+                  />
+                  <p className="text-xs text-gray-400 mt-1 dark:text-gray-500">
+                    Optional price query in currency per kWh. When set, the chart shows price alongside power and computes total kWh & cost.
                   </p>
                 </div>
 

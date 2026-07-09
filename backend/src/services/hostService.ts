@@ -22,8 +22,8 @@ export class HostService {
    */
   static createHost(data: CreateHostDTO): Host {
     const result = db.prepare(
-      `INSERT INTO hosts (name, ip_address, mac_address, broadcast_address, ssh_username, ssh_password, ssh_auth_type, ssh_port, shutdown_command, reboot_command, description, prometheus_metric, energy_days_range)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+      `INSERT INTO hosts (name, ip_address, mac_address, broadcast_address, ssh_username, ssh_password, ssh_auth_type, ssh_port, shutdown_command, reboot_command, description, prometheus_metric, energy_price_metric, energy_days_range)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
     ).run(
       data.name,
       data.ip_address,
@@ -37,6 +37,7 @@ export class HostService {
       data.reboot_command || 'sudo reboot',
       data.description || null,
       data.prometheus_metric || null,
+      data.energy_price_metric || null,
       data.energy_days_range || 7
     );
 
@@ -107,6 +108,10 @@ export class HostService {
     if (data.prometheus_metric !== undefined) {
       updates.push('prometheus_metric = ?');
       values.push(data.prometheus_metric);
+    }
+    if (data.energy_price_metric !== undefined) {
+      updates.push('energy_price_metric = ?');
+      values.push(data.energy_price_metric || null);
     }
     if (data.energy_days_range !== undefined) {
       updates.push('energy_days_range = ?');

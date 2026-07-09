@@ -12,6 +12,7 @@ export interface Host {
   reboot_command?: string;
   description?: string;
   prometheus_metric?: string;
+  energy_price_metric?: string;
   energy_days_range?: number;
   created_at: string;
   updated_at: string;
@@ -30,6 +31,7 @@ export interface CreateHostDTO {
   reboot_command?: string;
   description?: string;
   prometheus_metric?: string;
+  energy_price_metric?: string;
   energy_days_range?: number;
 }
 
@@ -46,6 +48,7 @@ export interface UpdateHostDTO {
   reboot_command?: string;
   description?: string;
   prometheus_metric?: string;
+  energy_price_metric?: string;
   energy_days_range?: number;
 }
 

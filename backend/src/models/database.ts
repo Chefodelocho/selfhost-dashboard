@@ -105,4 +105,11 @@ try {
   // Column already exists
 }
 
+// Add energy_price_metric column if it doesn't exist
+try {
+  db.exec(`ALTER TABLE hosts ADD COLUMN energy_price_metric TEXT`);
+} catch (e) {
+  // Column already exists
+}
+
 export default db;

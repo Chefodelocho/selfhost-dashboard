@@ -20,6 +20,9 @@ export default function HostDetail({ params }: { params: Promise<{ id: string }>
   const [refreshing, setRefreshing] = useState(false);
   const [actionLoading, setActionLoading] = useState(false);
   const [energyData, setEnergyData] = useState<EnergyDataPoint[]>([]);
+  const [priceData, setPriceData] = useState<EnergyDataPoint[] | undefined>(undefined);
+  const [totalKwh, setTotalKwh] = useState<number | undefined>(undefined);
+  const [totalCost, setTotalCost] = useState<number | undefined>(undefined);
   const [energyDays, setEnergyDays] = useState(7);
   const [energyLoading, setEnergyLoading] = useState(false);
   const [showScheduleForm, setShowScheduleForm] = useState(false);
@@ -42,10 +45,16 @@ export default function HostDetail({ params }: { params: Promise<{ id: string }>
       setEnergyLoading(true);
       const result = await hostAPI.getEnergyData(hostId, days || energyDays);
       setEnergyData(result.data);
+      setPriceData(result.price_data);
+      setTotalKwh(result.total_kwh);
+      setTotalCost(result.total_cost);
       if (days) setEnergyDays(days);
     } catch (error) {
       console.error('Failed to load energy data:', error);
       setEnergyData([]);
+      setPriceData(undefined);
+      setTotalKwh(undefined);
+      setTotalCost(undefined);
     } finally {
       setEnergyLoading(false);
     }
@@ -506,6 +515,9 @@ export default function HostDetail({ params }: { params: Promise<{ id: string }>
                 days={energyDays}
                 onDaysChange={(d) => loadEnergyData(d)}
                 loading={energyLoading}
+                priceData={priceData}
+                totalKwh={totalKwh}
+                totalCost={totalCost}
               />
             </div>
           </div>

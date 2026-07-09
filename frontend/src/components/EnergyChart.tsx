@@ -4,6 +4,7 @@ import { useState, useRef, useEffect } from 'react';
 import {
   AreaChart,
   Area,
+  Line,
   XAxis,
   YAxis,
   Tooltip,
@@ -17,6 +18,9 @@ interface EnergyChartProps {
   days: number;
   onDaysChange: (days: number) => void;
   loading?: boolean;
+  priceData?: EnergyDataPoint[];
+  totalKwh?: number;
+  totalCost?: number;
 }
 
 const DAY_OPTIONS = [1, 3, 7, 15];
@@ -33,10 +37,32 @@ function formatValue(value: number): string {
   return `${value.toFixed(1)} W`;
 }
 
-export default function EnergyChart({ data, days, onDaysChange, loading }: EnergyChartProps) {
+function formatPrice(value: number): string {
+  return `${value.toFixed(3)} €/kWh`;
+}
+
+function formatKwh(value: number): string {
+  return `${value.toFixed(2)} kWh`;
+}
+
+function formatCost(value: number): string {
+  return `${value.toFixed(2)} €`;
+}
+
+export default function EnergyChart({
+  data,
+  days,
+  onDaysChange,
+  loading,
+  priceData,
+  totalKwh,
+  totalCost,
+}: EnergyChartProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const [dims, setDims] = useState({ width: 0, height: 0 });
   const { theme } = useTheme();
+
+  const hasPrice = !!priceData && priceData.length > 0;
 
   useEffect(() => {
     const container = containerRef.current;
@@ -53,9 +79,10 @@ export default function EnergyChart({ data, days, onDaysChange, loading }: Energ
     return () => observer.disconnect();
   }, [data.length > 0]); // Re-attach when chart container appears
 
-  const chartData = data.map((point) => ({
+  const chartData = data.map((point, i) => ({
     time: point.timestamp,
     value: point.value,
+    price: hasPrice ? priceData![i]?.value ?? null : null,
   }));
 
   // Calculate stats
@@ -86,14 +113,50 @@ export default function EnergyChart({ data, days, onDaysChange, loading }: Energ
           ))}
         </div>
 
-        {values.length > 0 && (
-          <div className="flex items-center gap-4 text-xs text-gray-500 dark:text-gray-400">
-            <span>Avg: <span className="font-semibold text-gray-700 dark:text-gray-300">{avg.toFixed(1)} W</span></span>
-            <span>Max: <span className="font-semibold text-gray-700 dark:text-gray-300">{max.toFixed(1)} W</span></span>
-            <span>Min: <span className="font-semibold text-gray-700 dark:text-gray-300">{min.toFixed(1)} W</span></span>
-          </div>
-        )}
+        <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-gray-500 dark:text-gray-400">
+          {values.length > 0 && (
+            <>
+              <span>Avg: <span className="font-semibold text-gray-700 dark:text-gray-300">{avg.toFixed(1)} W</span></span>
+              <span>Max: <span className="font-semibold text-gray-700 dark:text-gray-300">{max.toFixed(1)} W</span></span>
+              <span>Min: <span className="font-semibold text-gray-700 dark:text-gray-300">{min.toFixed(1)} W</span></span>
+            </>
+          )}
+        </div>
       </div>
+
+      {/* Energy summary when price metric is configured */}
+      {hasPrice && totalKwh !== undefined && (
+        <div className="grid grid-cols-2 gap-3 mb-4">
+          <div className="rounded-lg border border-blue-200/60 bg-blue-50/50 px-4 py-3 dark:border-blue-800/40 dark:bg-blue-900/20">
+            <p className="text-[11px] font-medium uppercase tracking-wide text-blue-600 dark:text-blue-400">Consumed Energy</p>
+            <p className="text-lg font-bold text-gray-900 dark:text-gray-100 mt-0.5">
+              {totalKwh !== undefined ? formatKwh(totalKwh) : '—'}
+            </p>
+            <p className="text-[11px] text-gray-400 dark:text-gray-500">over {days} {days === 1 ? 'day' : 'days'}</p>
+          </div>
+          <div className="rounded-lg border border-amber-200/60 bg-amber-50/50 px-4 py-3 dark:border-amber-800/40 dark:bg-amber-900/20">
+            <p className="text-[11px] font-medium uppercase tracking-wide text-amber-600 dark:text-amber-400">Total Cost</p>
+            <p className="text-lg font-bold text-gray-900 dark:text-gray-100 mt-0.5">
+              {totalCost !== undefined ? formatCost(totalCost) : '—'}
+            </p>
+            <p className="text-[11px] text-gray-400 dark:text-gray-500">
+              {totalKwh && totalCost !== undefined ? `${formatCost(totalCost / totalKwh)}/kWh avg` : '—'}
+            </p>
+          </div>
+        </div>
+      )}
+
+      {/* Legend when price overlay is present */}
+      {hasPrice && (
+        <div className="flex items-center gap-4 mb-2 text-xs">
+          <span className="flex items-center gap-1.5 text-gray-600 dark:text-gray-300">
+            <span className="inline-block w-3 h-1 rounded-full bg-blue-500"></span> Power (W)
+          </span>
+          <span className="flex items-center gap-1.5 text-gray-600 dark:text-gray-300">
+            <span className="inline-block w-3 h-0.5 bg-amber-500"></span> Price (€/kWh)
+          </span>
+        </div>
+      )}
 
       {/* Chart */}
       {loading ? (
@@ -111,7 +174,7 @@ export default function EnergyChart({ data, days, onDaysChange, loading }: Energ
       ) : (
         <div ref={containerRef} className="h-64 -ml-2" style={{ minWidth: 0 }}>
           {dims.width > 0 && dims.height > 0 && (
-            <AreaChart width={dims.width} height={dims.height} data={chartData} margin={{ top: 5, right: 10, left: 0, bottom: 0 }}>
+            <AreaChart width={dims.width} height={dims.height} data={chartData} margin={{ top: 5, right: hasPrice ? 10 : 10, left: 0, bottom: 0 }}>
               <defs>
                 <linearGradient id="energyGradient" x1="0" y1="0" x2="0" y2="1">
                   <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.15} />
@@ -130,12 +193,24 @@ export default function EnergyChart({ data, days, onDaysChange, loading }: Energ
                 minTickGap={40}
               />
               <YAxis
+                yAxisId="power"
                 tick={{ fontSize: 11, fill: isDark ? '#9ca3af' : '#94a3b8' }}
                 tickLine={false}
                 axisLine={false}
                 tickFormatter={(v) => `${v} W`}
                 width={55}
               />
+              {hasPrice && (
+                <YAxis
+                  yAxisId="price"
+                  orientation="right"
+                  tick={{ fontSize: 11, fill: isDark ? '#d6a456' : '#d97706' }}
+                  tickLine={false}
+                  axisLine={false}
+                  tickFormatter={(v) => `${v.toFixed(2)}`}
+                  width={45}
+                />
+              )}
               <Tooltip
                 contentStyle={{
                   backgroundColor: isDark ? '#1f2937' : 'white',
@@ -146,7 +221,10 @@ export default function EnergyChart({ data, days, onDaysChange, loading }: Energ
                   color: isDark ? '#e5e7eb' : undefined,
                 }}
                 labelStyle={{ color: isDark ? '#9ca3af' : '#64748b', fontWeight: 500 }}
-                formatter={(value: unknown) => [formatValue(Number(value)), 'Power']}
+                formatter={(value: unknown, name: unknown) => {
+                  if (String(name) === 'price') return [formatPrice(Number(value)), 'Price'];
+                  return [formatValue(Number(value)), 'Power'];
+                }}
                 labelFormatter={(ts) => {
                   return new Date(ts).toLocaleString('es-ES', {
                     day: 'numeric', month: 'short',
@@ -155,6 +233,7 @@ export default function EnergyChart({ data, days, onDaysChange, loading }: Energ
                 }}
               />
               <Area
+                yAxisId="power"
                 type="monotone"
                 dataKey="value"
                 stroke="#3b82f6"
@@ -163,6 +242,17 @@ export default function EnergyChart({ data, days, onDaysChange, loading }: Energ
                 dot={false}
                 activeDot={{ r: 4, fill: '#3b82f6', stroke: isDark ? '#1f2937' : 'white', strokeWidth: 2 }}
               />
+              {hasPrice && (
+                <Line
+                  yAxisId="price"
+                  type="monotone"
+                  dataKey="price"
+                  stroke="#f59e0b"
+                  strokeWidth={1.5}
+                  dot={false}
+                  activeDot={{ r: 3, fill: '#f59e0b', stroke: isDark ? '#1f2937' : 'white', strokeWidth: 2 }}
+                />
+              )}
             </AreaChart>
           )}
         </div>

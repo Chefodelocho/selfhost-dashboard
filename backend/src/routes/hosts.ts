@@ -336,7 +336,8 @@ router.get('/:id/energy', async (req: Request, res: Response) => {
       id,
       host.prometheus_metric,
       host.ip_address,
-      days
+      days,
+      host.energy_price_metric || undefined
     );
 
     console.log(`[ENERGY] Returning ${result.data.length} data points`);
