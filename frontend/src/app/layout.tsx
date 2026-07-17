@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import ThemeProvider from "@/components/ThemeProvider";
+import AuthProvider from "@/components/AuthProvider";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -64,7 +65,9 @@ export default function RootLayout({
       </head>
       <body className="min-h-full flex flex-col bg-gradient-to-br from-slate-50 via-white to-blue-50/30 dark:from-gray-950 dark:via-gray-900 dark:to-gray-950">
         <ThemeProvider>
-          {children}
+          <AuthProvider>
+            {children}
+          </AuthProvider>
         </ThemeProvider>
       </body>
     </html>

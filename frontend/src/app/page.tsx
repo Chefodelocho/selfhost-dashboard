@@ -4,13 +4,15 @@ import { useEffect, useState, useCallback } from 'react';
 import { hostAPI, scheduleAPI, connectToSSE } from '@/lib/api';
 import type { Host, Schedule, EnergyDataPoint } from '@/types';
 import Image from 'next/image';
-import { Power, PowerOff, RefreshCw, Plus, Server, Wifi, WifiOff, Clock, ChevronRight, Calendar, Zap } from 'lucide-react';
+import { Power, PowerOff, RefreshCw, Plus, Server, Wifi, WifiOff, Clock, ChevronRight, Calendar, Zap, LogOut } from 'lucide-react';
 import EnergySparkline from '@/components/EnergySparkline';
 import ThemeToggle from '@/components/ThemeToggle';
+import { useAuth } from '@/components/AuthProvider';
 
 const DAYS_OF_WEEK = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Daily'];
 
 export default function Dashboard() {
+  const { authEnabled, logout } = useAuth();
   const [hosts, setHosts] = useState<Host[]>([]);
   const [schedules, setSchedules] = useState<Schedule[]>([]);
   const [loading, setLoading] = useState(true);
@@ -201,6 +203,16 @@ export default function Dashboard() {
                 </div>
               )}
               <ThemeToggle />
+              {authEnabled && (
+                <button
+                  onClick={logout}
+                  title="Sign out"
+                  className="flex items-center gap-2 px-3 py-1.5 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 hover:border-gray-300 transition-all text-sm shadow-sm dark:bg-gray-800 dark:border-gray-600 dark:hover:bg-gray-700 dark:hover:border-gray-500 dark:text-gray-300"
+                >
+                  <LogOut className="w-4 h-4" />
+                  <span className="hidden sm:inline">Sign out</span>
+                </button>
+              )}
               <button
                 onClick={refreshStatuses}
                 disabled={refreshing}

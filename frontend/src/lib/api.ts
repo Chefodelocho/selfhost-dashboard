@@ -14,19 +14,63 @@ import type {
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api';
 
+const TOKEN_STORAGE_KEY = 'selfhost_auth_token';
+
+/** Retrieve the stored session token (if any). */
+export function getAuthToken(): string | null {
+  if (typeof window === 'undefined') return null;
+  return localStorage.getItem(TOKEN_STORAGE_KEY);
+}
+
+/** Persist (or clear) the session token. */
+export function setAuthToken(token: string | null): void {
+  if (typeof window === 'undefined') return;
+  if (token) {
+    localStorage.setItem(TOKEN_STORAGE_KEY, token);
+  } else {
+    localStorage.removeItem(TOKEN_STORAGE_KEY);
+  }
+}
+
+/**
+ * Error thrown when a request is rejected due to missing/invalid auth. The
+ * AuthProvider listens for this to redirect the user to the login page.
+ */
+export class UnauthorizedError extends Error {
+  constructor() {
+    super('Unauthorized');
+    this.name = 'UnauthorizedError';
+  }
+}
+
 export async function fetchAPI<T>(
   endpoint: string,
   options: RequestInit = {}
 ): Promise<T> {
   const url = `${API_URL}${endpoint}`;
-  
+
+  const headers: Record<string, string> = {
+    'Content-Type': 'application/json',
+    ...(options.headers as Record<string, string> | undefined),
+  };
+
+  // Attach the bearer token when one is available so protected routes are
+  // accessible after logging in.
+  const token = getAuthToken();
+  if (token) {
+    headers['Authorization'] = `Bearer ${token}`;
+  }
+
   const response = await fetch(url, {
-    headers: {
-      'Content-Type': 'application/json',
-      ...options.headers,
-    },
     ...options,
+    headers,
   });
+
+  if (response.status === 401) {
+    // Drop any stale token and signal the caller.
+    setAuthToken(null);
+    throw new UnauthorizedError();
+  }
 
   if (!response.ok) {
     const error = await response.json().catch(() => ({ error: 'Unknown error' }));
@@ -99,9 +143,32 @@ export const scheduleAPI = {
     }),
 };
 
+// Auth API
+export interface AuthStatus {
+  enabled: boolean;
+  authenticated: boolean;
+}
+
+export const authAPI = {
+  getStatus: () => fetchAPI<AuthStatus>('/auth/status'),
+  login: (username: string, password: string) =>
+    fetchAPI<{ enabled: boolean; token: string | null }>('/auth/login', {
+      method: 'POST',
+      body: JSON.stringify({ username, password }),
+    }),
+  logout: () =>
+    fetchAPI<{ success: boolean }>('/auth/logout', {
+      method: 'POST',
+    }),
+};
+
 // SSE for real-time updates
 export function connectToSSE(onMessage: (event: { type: string; data?: any }) => void): EventSource {
-  const eventSource = new EventSource(`${API_URL}/events`);
+  // EventSource cannot set custom headers, so pass the token as a query
+  // parameter when authentication is active.
+  const token = getAuthToken();
+  const tokenQuery = token ? `?token=${encodeURIComponent(token)}` : '';
+  const eventSource = new EventSource(`${API_URL}/events${tokenQuery}`);
 
   eventSource.onmessage = (event) => {
     try {

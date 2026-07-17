@@ -4,6 +4,8 @@ import dotenv from 'dotenv';
 import hostsRouter from './routes/hosts';
 import schedulesRouter from './routes/schedules';
 import eventsRouter, { broadcastEvent } from './routes/events';
+import authRouter from './routes/auth';
+import { requireAuth, isAuthEnabled } from './services/authService';
 import { SchedulerService } from './services/schedulerService';
 import { StatusService } from './services/statusService';
 
@@ -13,6 +15,11 @@ dotenv.config();
 // Set timezone for scheduler (defaults to Europe/Madrid)
 process.env.TZ = process.env.TZ || 'Europe/Madrid';
 console.log(`Timezone set to: ${process.env.TZ}`);
+console.log(
+  isAuthEnabled()
+    ? 'Authentication: ENABLED (login required)'
+    : 'Authentication: DISABLED (set AUTH_USERNAME and AUTH_PASSWORD_HASH to enable)'
+);
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -22,9 +29,10 @@ app.use(cors());
 app.use(express.json());
 
 // Routes
-app.use('/api/hosts', hostsRouter);
-app.use('/api/schedules', schedulesRouter);
-app.use('/api/events', eventsRouter);
+app.use('/api/auth', authRouter); // public — login endpoints
+app.use('/api/hosts', requireAuth, hostsRouter);
+app.use('/api/schedules', requireAuth, schedulesRouter);
+app.use('/api/events', requireAuth, eventsRouter);
 
 // Health check endpoint
 app.get('/api/health', (req, res) => {
