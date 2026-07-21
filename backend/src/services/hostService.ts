@@ -1,12 +1,38 @@
 import db from '../models/database';
-import { Host, CreateHostDTO, UpdateHostDTO } from '../types';
+import { Host, CreateHostDTO, UpdateHostDTO, CustomCommand } from '../types';
+
+/**
+ * Parse the custom_commands JSON column into an array. The column stores a
+ * JSON array of { name, command } objects; empty/null values become [].
+ */
+function parseCustomCommands(raw: any): CustomCommand[] {
+  if (!raw) return [];
+  if (Array.isArray(raw)) return raw;
+  try {
+    const parsed = JSON.parse(raw);
+    return Array.isArray(parsed) ? parsed : [];
+  } catch {
+    return [];
+  }
+}
+
+/**
+ * Deserialize the custom_commands column for a single host row.
+ */
+function mapHost(host: Host): Host {
+  return {
+    ...host,
+    custom_commands: parseCustomCommands((host as any).custom_commands),
+  };
+}
 
 export class HostService {
   /**
    * Get all hosts
    */
   static getAllHosts(): Host[] {
-    return db.prepare('SELECT * FROM hosts ORDER BY name').all() as Host[];
+    const hosts = db.prepare('SELECT * FROM hosts ORDER BY name').all() as Host[];
+    return hosts.map(mapHost);
   }
 
   /**
@@ -14,7 +40,7 @@ export class HostService {
    */
   static getHostById(id: number): Host | null {
     const host = db.prepare('SELECT * FROM hosts WHERE id = ?').get(id) as Host | undefined;
-    return host || null;
+    return host ? mapHost(host) : null;
   }
 
   /**
@@ -22,8 +48,8 @@ export class HostService {
    */
   static createHost(data: CreateHostDTO): Host {
     const result = db.prepare(
-      `INSERT INTO hosts (name, ip_address, mac_address, broadcast_address, ssh_username, ssh_password, ssh_auth_type, ssh_port, shutdown_command, reboot_command, description, prometheus_metric, energy_price_metric, energy_days_range)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+      `INSERT INTO hosts (name, ip_address, mac_address, broadcast_address, ssh_username, ssh_password, ssh_auth_type, ssh_port, shutdown_command, reboot_command, custom_commands, description, prometheus_metric, energy_price_metric, energy_days_range)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
     ).run(
       data.name,
       data.ip_address,
@@ -35,6 +61,7 @@ export class HostService {
       data.ssh_port || 22,
       data.shutdown_command || 'sudo shutdown -h now',
       data.reboot_command || 'sudo reboot',
+      JSON.stringify(data.custom_commands || []),
       data.description || null,
       data.prometheus_metric || null,
       data.energy_price_metric || null,
@@ -100,6 +127,10 @@ export class HostService {
     if (data.reboot_command !== undefined) {
       updates.push('reboot_command = ?');
       values.push(data.reboot_command);
+    }
+    if (data.custom_commands !== undefined) {
+      updates.push('custom_commands = ?');
+      values.push(JSON.stringify(data.custom_commands));
     }
     if (data.description !== undefined) {
       updates.push('description = ?');

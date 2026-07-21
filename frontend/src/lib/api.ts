@@ -115,6 +115,11 @@ export const hostAPI = {
     fetchAPI<SSHResponse>(`/hosts/${id}/reboot`, {
       method: 'POST',
     }),
+  runCommand: (id: number, index: number) =>
+    fetchAPI<SSHResponse>(`/hosts/${id}/command`, {
+      method: 'POST',
+      body: JSON.stringify({ index }),
+    }),
   getStatus: (id: number) =>
     fetchAPI<HostStatus>(`/hosts/${id}/status`),
   getHistory: (id: number, limit: number = 100) =>

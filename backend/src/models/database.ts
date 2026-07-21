@@ -112,4 +112,11 @@ try {
   // Column already exists
 }
 
+// Add custom_commands column if it doesn't exist (stored as JSON array)
+try {
+  db.exec(`ALTER TABLE hosts ADD COLUMN custom_commands TEXT`);
+} catch (e) {
+  // Column already exists
+}
+
 export default db;

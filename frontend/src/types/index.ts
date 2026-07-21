@@ -1,3 +1,8 @@
+export interface CustomCommand {
+  name: string;
+  command: string;
+}
+
 export interface Host {
   id: number;
   name: string;
@@ -10,6 +15,7 @@ export interface Host {
   ssh_port?: number;
   shutdown_command?: string;
   reboot_command?: string;
+  custom_commands?: CustomCommand[];
   description?: string;
   prometheus_metric?: string;
   energy_price_metric?: string;
@@ -31,6 +37,7 @@ export interface CreateHostDTO {
   ssh_port?: number;
   shutdown_command?: string;
   reboot_command?: string;
+  custom_commands?: CustomCommand[];
   description?: string;
   prometheus_metric?: string;
   energy_price_metric?: string;
@@ -48,6 +55,7 @@ export interface UpdateHostDTO {
   ssh_port?: number;
   shutdown_command?: string;
   reboot_command?: string;
+  custom_commands?: CustomCommand[];
   description?: string;
   prometheus_metric?: string;
   energy_price_metric?: string;

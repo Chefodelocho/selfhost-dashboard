@@ -3,8 +3,8 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { hostAPI } from '@/lib/api';
-import type { CreateHostDTO, UpdateHostDTO, Host } from '@/types';
-import { ArrowLeft, Save, Trash2, Server, Shield, Wifi, Key, Terminal, Zap } from 'lucide-react';
+import type { CreateHostDTO, UpdateHostDTO, Host, CustomCommand } from '@/types';
+import { ArrowLeft, Save, Trash2, Server, Shield, Wifi, Key, Terminal, Zap, Plus } from 'lucide-react';
 import ThemeToggle from '@/components/ThemeToggle';
 
 export default function HostForm({ hostId }: { hostId?: number }) {
@@ -22,6 +22,7 @@ export default function HostForm({ hostId }: { hostId?: number }) {
     ssh_port: 22,
     shutdown_command: 'sudo shutdown -h now',
     reboot_command: 'sudo reboot',
+    custom_commands: [],
     description: '',
     prometheus_metric: '',
     energy_price_metric: '',
@@ -49,6 +50,7 @@ export default function HostForm({ hostId }: { hostId?: number }) {
         ssh_port: host.ssh_port || 22,
         shutdown_command: host.shutdown_command || 'sudo shutdown -h now',
         reboot_command: host.reboot_command || 'sudo reboot',
+        custom_commands: host.custom_commands || [],
         description: host.description || '',
         prometheus_metric: host.prometheus_metric || '',
         energy_price_metric: host.energy_price_metric || '',
@@ -107,6 +109,30 @@ export default function HostForm({ hostId }: { hostId?: number }) {
       ...prev,
       [name]: name === 'ssh_port' ? (value ? parseInt(value) : 22) : value,
     }));
+  };
+
+  const customCommands = formData.custom_commands || [];
+
+  const addCustomCommand = () => {
+    setFormData((prev) => ({
+      ...prev,
+      custom_commands: [...(prev.custom_commands || []), { name: '', command: '' }],
+    }));
+  };
+
+  const updateCustomCommand = (index: number, field: keyof CustomCommand, value: string) => {
+    setFormData((prev) => {
+      const commands = [...(prev.custom_commands || [])];
+      commands[index] = { ...commands[index], [field]: value };
+      return { ...prev, custom_commands: commands };
+    });
+  };
+
+  const removeCustomCommand = (index: number) => {
+    setFormData((prev) => {
+      const commands = (prev.custom_commands || []).filter((_, i) => i !== index);
+      return { ...prev, custom_commands: commands };
+    });
   };
 
   if (loading && hostId) {
@@ -382,6 +408,61 @@ export default function HostForm({ hostId }: { hostId?: number }) {
                     placeholder="sudo reboot"
                   />
                 </div>
+              </div>
+
+              {/* Custom Commands */}
+              <div className="pt-2 border-t border-gray-100 dark:border-gray-700">
+                <div className="flex items-center justify-between mb-2">
+                  <div>
+                    <p className="text-sm font-medium text-gray-700 dark:text-gray-300">Custom Commands</p>
+                    <p className="text-xs text-gray-400 dark:text-gray-500">
+                      Additional commands shown as buttons when the host is online
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={addCustomCommand}
+                    className="flex items-center gap-1.5 px-2.5 py-1.5 bg-purple-50 text-purple-600 rounded-lg hover:bg-purple-100 transition-all text-xs font-medium dark:bg-purple-900/30 dark:text-purple-400 dark:hover:bg-purple-900/50"
+                  >
+                    <Plus className="w-3.5 h-3.5" />
+                    Add
+                  </button>
+                </div>
+
+                {customCommands.length === 0 ? (
+                  <p className="text-xs text-gray-400 py-2 dark:text-gray-500">No custom commands configured</p>
+                ) : (
+                  <div className="space-y-3">
+                    {customCommands.map((cmd, index) => (
+                      <div key={index} className="flex flex-col sm:flex-row gap-2">
+                        <input
+                          type="text"
+                          value={cmd.name}
+                          onChange={(e) => updateCustomCommand(index, 'name', e.target.value)}
+                          className="sm:w-1/3 px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all text-sm dark:border-gray-600"
+                          placeholder="Button label"
+                        />
+                        <div className="flex flex-1 gap-2">
+                          <input
+                            type="text"
+                            value={cmd.command}
+                            onChange={(e) => updateCustomCommand(index, 'command', e.target.value)}
+                            className="flex-1 px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all text-sm font-mono dark:border-gray-600"
+                            placeholder="e.g., docker restart app"
+                          />
+                          <button
+                            type="button"
+                            onClick={() => removeCustomCommand(index)}
+                            className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors dark:text-gray-500 dark:hover:text-red-400 dark:hover:bg-red-900/30"
+                            title="Remove command"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
             </div>
           </div>

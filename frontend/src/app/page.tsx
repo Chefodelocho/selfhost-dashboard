@@ -4,7 +4,7 @@ import { useEffect, useState, useCallback } from 'react';
 import { hostAPI, scheduleAPI, connectToSSE } from '@/lib/api';
 import type { Host, Schedule, EnergyDataPoint } from '@/types';
 import Image from 'next/image';
-import { Power, PowerOff, RefreshCw, Plus, Server, Wifi, WifiOff, Clock, ChevronRight, Calendar, Zap, LogOut } from 'lucide-react';
+import { Power, PowerOff, RefreshCw, Plus, Server, Wifi, WifiOff, Clock, ChevronRight, Calendar, Zap, LogOut, Terminal } from 'lucide-react';
 import EnergySparkline from '@/components/EnergySparkline';
 import ThemeToggle from '@/components/ThemeToggle';
 import { useAuth } from '@/components/AuthProvider';
@@ -148,6 +148,22 @@ export default function Dashboard() {
       alert('Failed to reboot host. Make sure SSH credentials are configured.');
     } finally {
       setActionLoading(null);
+    }
+  };
+
+  const [customLoading, setCustomLoading] = useState<string | null>(null);
+
+  const runCustomCommand = async (hostId: number, index: number, name: string) => {
+    if (!confirm(`Run "${name}" on this host?`)) return;
+    try {
+      setCustomLoading(`${hostId}-${index}`);
+      await hostAPI.runCommand(hostId, index);
+      setTimeout(() => refreshStatuses(), 2000);
+    } catch (error) {
+      console.error('Failed to run custom command:', error);
+      alert('Failed to run command. Make sure SSH credentials are configured.');
+    } finally {
+      setCustomLoading(null);
     }
   };
 
@@ -399,6 +415,24 @@ export default function Dashboard() {
                         </>
                       )}
                     </div>
+
+                    {/* Custom commands */}
+                    {host.status === 'online' && host.custom_commands && host.custom_commands.length > 0 && (
+                      <div className="mt-2 flex flex-wrap gap-2">
+                        {host.custom_commands.map((cmd, index) => (
+                          <button
+                            key={index}
+                            onClick={() => runCustomCommand(host.id, index, cmd.name || `Command ${index + 1}`)}
+                            disabled={customLoading === `${host.id}-${index}` || actionLoading === host.id}
+                            title={cmd.command}
+                            className="flex-1 min-w-[80px] flex items-center justify-center gap-1.5 px-2.5 py-1.5 bg-purple-50 text-purple-700 rounded-lg hover:bg-purple-100 transition-all text-xs font-medium disabled:opacity-50 border border-purple-200/60 dark:bg-purple-900/30 dark:text-purple-300 dark:border-purple-800/40 dark:hover:bg-purple-900/50"
+                          >
+                            <Terminal className={`w-3 h-3 ${customLoading === `${host.id}-${index}` ? 'animate-spin' : ''}`} />
+                            {cmd.name || `Command ${index + 1}`}
+                          </button>
+                        ))}
+                      </div>
+                    )}
                   </div>
 
                   {/* Card footer */}

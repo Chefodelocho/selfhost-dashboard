@@ -262,6 +262,69 @@ router.post('/:id/reboot', async (req: Request, res: Response) => {
 });
 
 /**
+ * POST /api/hosts/:id/command
+ * Run a custom command (configured in host's custom_commands list) via SSH.
+ * The request body identifies the command by its index in the custom_commands
+ * array: { index: number }. The host must be configured with SSH credentials.
+ */
+router.post('/:id/command', async (req: Request, res: Response) => {
+  const timestamp = new Date().toISOString();
+  console.log(`\n[${timestamp}] [CUSTOM CMD] POST /api/hosts/${req.params.id}/command`);
+
+  try {
+    const id = parseInt(Array.isArray(req.params.id) ? req.params.id[0] : req.params.id);
+    const host = HostService.getHostById(id);
+
+    if (!host) {
+      console.log(`[CUSTOM CMD] Host with id=${id} not found`);
+      return res.status(404).json({ error: 'Host not found' });
+    }
+
+    console.log(`[CUSTOM CMD] Host: ${host.name} (${host.ip_address}), id=${host.id}`);
+
+    if (!host.ssh_username) {
+      console.log(`[CUSTOM CMD] No SSH username configured for host id=${id}`);
+      return res.status(400).json({ error: 'SSH username not configured for this host' });
+    }
+
+    const authType = host.ssh_auth_type || 'password';
+    if (authType === 'password' && !host.ssh_password) {
+      console.log(`[CUSTOM CMD] No SSH password configured for host id=${id}`);
+      return res.status(400).json({ error: 'SSH password not configured for this host' });
+    }
+
+    const customCommands = host.custom_commands || [];
+    const index = typeof req.body.index === 'number' ? req.body.index : parseInt(req.body.index);
+    if (isNaN(index) || index < 0 || index >= customCommands.length) {
+      console.log(`[CUSTOM CMD] Invalid command index ${index} for host id=${id}`);
+      return res.status(400).json({ error: 'Invalid command index' });
+    }
+
+    const customCommand = customCommands[index];
+    console.log(`[CUSTOM CMD] Auth type: ${authType}, SSH port: ${host.ssh_port || 22}`);
+    console.log(`[CUSTOM CMD] Running custom command "${customCommand.name}": ${customCommand.command}`);
+
+    const result = await SSHService.executeCommand(
+      host.ip_address,
+      host.ssh_port || 22,
+      host.ssh_username,
+      authType,
+      { command: 'custom', custom_command: customCommand.command },
+      host.ssh_password
+    );
+
+    console.log(`[CUSTOM CMD] Result: success=${result.success}, message="${result.message}"`);
+    res.json(result);
+  } catch (error) {
+    console.error(`[CUSTOM CMD] Unhandled error: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    if (error instanceof Error && error.stack) {
+      console.error(`[CUSTOM CMD] Stack trace: ${error.stack}`);
+    }
+    res.status(500).json({ error: 'Failed to run custom command' });
+  }
+});
+
+/**
  * GET /api/hosts/:id/status
  * Get current host status
  */

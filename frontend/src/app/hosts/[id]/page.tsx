@@ -4,7 +4,7 @@ import { useEffect, useState, use, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { hostAPI, scheduleAPI } from '@/lib/api';
 import type { Host, Schedule, EnergyDataPoint } from '@/types';
-import { ArrowLeft, Power, PowerOff, RefreshCw, Edit, Calendar, Trash2, Plus, Server, Clock, Monitor, Wifi, WifiOff, ChevronRight, Zap } from 'lucide-react';
+import { ArrowLeft, Power, PowerOff, RefreshCw, Edit, Calendar, Trash2, Plus, Server, Clock, Monitor, Wifi, WifiOff, ChevronRight, Zap, Terminal } from 'lucide-react';
 import EnergyChart from '@/components/EnergyChart';
 import ThemeToggle from '@/components/ThemeToggle';
 
@@ -139,6 +139,22 @@ export default function HostDetail({ params }: { params: Promise<{ id: string }>
       alert('Failed to reboot host. Make sure SSH credentials are configured.');
     } finally {
       setActionLoading(false);
+    }
+  };
+
+  const [customLoading, setCustomLoading] = useState<number | null>(null);
+
+  const runCustomCommand = async (index: number, name: string) => {
+    if (!confirm(`Run "${name}" on this host?`)) return;
+    try {
+      setCustomLoading(index);
+      await hostAPI.runCommand(hostId, index);
+      setTimeout(() => refreshStatus(), 2000);
+    } catch (error) {
+      console.error('Failed to run custom command:', error);
+      alert('Failed to run command. Make sure SSH credentials are configured.');
+    } finally {
+      setCustomLoading(null);
     }
   };
 
@@ -349,9 +365,29 @@ export default function HostDetail({ params }: { params: Promise<{ id: string }>
                       </button>
                     </div>
                   )}
-                </div>
-              </div>
-            </div>
+
+                  {host.status === 'online' && host.custom_commands && host.custom_commands.length > 0 && (
+                    <div className="pt-2 mt-2 border-t border-gray-100 dark:border-gray-700">
+                      <p className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-2 dark:text-gray-400">Custom Commands</p>
+                      <div className="grid grid-cols-2 gap-2">
+                        {host.custom_commands.map((cmd, index) => (
+                          <button
+                            key={index}
+                            onClick={() => runCustomCommand(index, cmd.name || `Command ${index + 1}`)}
+                            disabled={customLoading === index || actionLoading}
+                            title={cmd.command}
+                            className="flex items-center justify-center gap-2 px-3 py-2.5 bg-purple-50 text-purple-700 rounded-lg hover:bg-purple-100 disabled:opacity-50 transition-all text-sm font-medium border border-purple-200/60 dark:bg-purple-900/30 dark:text-purple-300 dark:border-purple-800/40 dark:hover:bg-purple-900/50"
+                          >
+                            <Terminal className={`w-4 h-4 ${customLoading === index ? 'animate-spin' : ''}`} />
+                            {cmd.name || `Command ${index + 1}`}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                 </div>
+               </div>
+             </div>
           </div>
 
           {/* Schedules - right column (wider) */}
