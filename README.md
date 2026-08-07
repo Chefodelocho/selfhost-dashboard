@@ -1,10 +1,38 @@
-# SelfHost Dashboard
+<div align="center">
+  <img src="./frontend/public/apple-touch-icon.png" alt="SelfHost Dashboard Logo" width="120" height="120" />
+  
+  # SelfHost Dashboard
+  
+  **A modern Progressive Web App (PWA) for managing and monitoring server devices within your LAN.**
+  
+  Create and configure hosts with IP, MAC, and SSH credentials to perform Wake on LAN, shutdown, reboot, monitor online status, and track energy consumption — all from a clean, responsive dashboard.
 
-A modern Progressive Web App (PWA) for managing and monitoring server devices within your LAN. Create and configure hosts with IP, MAC, and SSH credentials to perform Wake on LAN, shutdown, reboot, monitor online status, and track energy consumption — all from a clean, responsive dashboard.
+  ![Next.js](https://img.shields.io/badge/Next.js-16-blue) 
+  ![Express](https://img.shields.io/badge/Express-5-green) 
+  ![Docker](https://img.shields.io/badge/Docker-ready-blue)
+  ![License](https://img.shields.io/badge/License-ISC-yellow)
+  ![Node.js](https://img.shields.io/badge/Node.js-20+-green)
 
-![Dashboard](https://img.shields.io/badge/Next.js-16-blue) ![Backend](https://img.shields.io/badge/Express-5-green) ![Docker](https://img.shields.io/badge/Docker-ready-blue)
+</div>
 
-## Features
+## 📖 Table of Contents
+
+- [✨ Features](#-features)
+- [🚀 Quick Start](#-quick-start)
+- [📸 Screenshots](#-screenshots)
+- [🏗️ Architecture & Technology Stack](#%EF%B8%8F-architecture--technology-stack)
+- [🔗 Related Projects](#-related-projects)
+- [📁 Project Structure](#-project-structure)
+- [📖 Usage Guide](#-usage-guide)
+- [🐳 Docker Reference](#-docker-reference)
+- [⚙️ Advanced Configuration](#%EF%B8%8F-advanced-configuration)
+- [🔒 Security Notes](#-security-notes)
+- [🐛 Troubleshooting](#-troubleshooting)
+- [📝 API Endpoints](#-api-endpoints)
+- [🤝 Contributing](#-contributing)
+- [📄 License](#-license)
+
+## ✨ Features
 
 - **Host Management** — Create, edit, and delete hosts with IP, MAC, and SSH credentials
 - **Wake on LAN** — Send magic packets to wake up offline hosts
@@ -14,7 +42,102 @@ A modern Progressive Web App (PWA) for managing and monitoring server devices wi
 - **Scheduling** — Configure power on/off schedules per day of week with automatic execution
 - **PWA** — Installable on mobile and desktop devices
 
-## Technology Stack
+## 🚀 Quick Start
+
+Choose your preferred installation method:
+
+### Docker (Recommended - 2 Minutes)
+
+The easiest way to get up and running. Perfect for production deployments.
+
+```bash
+# 1. Clone and navigate to the project
+git clone https://github.com/YOUR_USERNAME/selfhost-dashboard.git
+cd selfhost-dashboard
+
+# 2. Copy the environment template
+cp .env.docker.example .env.docker
+
+# 3. Generate an encryption key (save this!)
+openssl rand -hex 32
+
+# 4. Edit .env.docker and set SSH_ENCRYPTION_KEY with the generated value
+nano .env.docker
+
+# 5. Start with Docker Compose
+docker compose up -d
+
+# 6. Open your browser
+# http://localhost:3000
+```
+
+**That's it!** The application is now running. Database will be persisted in `./data/`.
+
+### Local Development (5 Minutes)
+
+For development or testing without Docker.
+
+```bash
+# 1. Clone the repository
+git clone https://github.com/YOUR_USERNAME/selfhost-dashboard.git
+cd selfhost-dashboard
+
+# 2. Install dependencies
+cd backend && npm install
+cd ../frontend && npm install
+
+# 3. Configure the backend
+cd ../backend
+cp .env.example .env
+# Edit .env and set SSH_ENCRYPTION_KEY
+nano .env
+
+# 4. Start in separate terminals
+# Terminal 1 - Backend
+cd backend && npm run dev
+
+# Terminal 2 - Frontend
+cd frontend && npm run dev
+
+# 5. Open your browser
+# http://localhost:3000
+```
+
+### Next Steps After Installation
+
+1. **Add Your First Host** — Click "Add Host" and fill in:
+   - Host name, IP address, and MAC address
+   - SSH credentials (optional, for remote control)
+   - Prometheus metric (optional, for energy monitoring)
+
+2. **Enable Wake on LAN** — Ensure your host has WoL enabled in BIOS/UEFI
+
+3. **(Optional) Connect Prometheus** — Set `PROMETHEUS_URL` in your environment for energy tracking
+
+4. **Install as PWA** — Click the install icon in your browser address bar (Chrome/Edge)
+
+## 📸 Screenshots
+
+> **[ADD YOUR SCREENSHOTS HERE]**
+> 
+> Show off your application with screenshots! Consider including:
+> - Dashboard overview with host cards
+> - Host detail page with energy charts
+> - Add/edit host form
+> - Mobile PWA view in action
+>
+> **How to add:**
+> 1. Create a `docs/screenshots/` folder in your repository
+> 2. Take screenshots of your application running
+> 3. Upload them to the folder (e.g., `docs/screenshots/dashboard.png`)
+> 4. Replace this section with:
+> ```markdown
+> ![Dashboard Overview](docs/screenshots/dashboard.png)
+> ![Host Details](docs/screenshots/host-details.png)
+> ![Mobile View](docs/screenshots/mobile-view.png)
+> ```
+
+## 🏗️ Architecture & Technology Stack
 
 ### Frontend
 - **Framework**: Next.js 16 (React 19)
@@ -34,7 +157,22 @@ A modern Progressive Web App (PWA) for managing and monitoring server devices wi
 - **Scheduling**: node-cron
 - **Energy**: Prometheus query_range API
 
-## Project Structure
+## 🔗 Related Projects
+
+Complementary projects and integrations that work well with SelfHost Dashboard:
+
+> **[ADD YOUR RELATED PROJECTS HERE]**
+>
+> Share projects that complement or extend SelfHost Dashboard:
+> - Home server management tools
+> - Energy monitoring systems
+> - Infrastructure automation projects
+> - Similar dashboard applications
+>
+> **Example format:**
+> - **[Project Name]** — Brief description of what it does. [GitHub Link](https://github.com/...)
+
+## 📁 Project Structure
 
 ```
 selfhost-dashboard/
@@ -90,93 +228,50 @@ selfhost-dashboard/
     └── architecture.md          # Architecture documentation
 ```
 
-## Getting Started
+## ⚙️ Advanced Configuration
 
-### Option A: Docker (Recommended)
+### Environment Variables Reference
 
-The easiest way to run SelfHost Dashboard. Uses `network_mode: host` for Wake-on-LAN and ICMP ping support.
-
-```bash
-# 1. Copy the environment template
-cp .env.docker.example .env.docker
-
-# 2. Generate an encryption key and edit .env.docker
-openssl rand -hex 32
-# Set SSH_ENCRYPTION_KEY in .env.docker
-
-# 3. Build and start
-docker compose up -d
-
-# 4. Open http://localhost:3000
-```
-
-**Migrating from local development?** Copy your existing database:
-```bash
-mkdir -p data
-cp backend/database/dashboard.db data/dashboard.db
-```
-
-**SSH key authentication?** Mount your private key and set the path in `.env.docker`:
-```yaml
-# docker-compose.yml — uncomment and adjust the SSH key volume:
-- /home/youruser/.ssh/id_ed25519:/app/ssh_key:ro
-```
-```env
-# .env.docker
-SSH_PRIVATE_KEY_PATH=/app/ssh_key
-```
-
-> **Note:** Use absolute paths for SSH key mounts. `~` may not expand correctly when using `sudo`.
-
-### Option B: Local Development
-
-#### Prerequisites
-
-- Node.js 20+
-- npm
-
-#### Installation
-
-```bash
-# Install backend dependencies
-cd backend && npm install
-
-# Install frontend dependencies
-cd ../frontend && npm install
-```
-
-#### Configuration
-
-```bash
-cd backend
-cp .env.example .env
-```
-
-Edit `backend/.env`:
+#### Backend Configuration (`backend/.env`)
 
 | Variable | Default | Description |
 |----------|---------|-------------|
 | `PORT` | `3001` | Backend server port |
 | `DATABASE_PATH` | `./database/dashboard.db` | SQLite database path |
-| `SSH_ENCRYPTION_KEY` | — | Key for encrypting stored SSH passwords |
+| `SSH_ENCRYPTION_KEY` | — | **Required.** Key for encrypting stored SSH passwords |
 | `TZ` | `Europe/Madrid` | Timezone for scheduler |
 | `SSH_PRIVATE_KEY_PATH` | `~/.ssh/id_ed25519` | SSH private key for key-based auth |
 | `SSH_AUTH_SOCK` | — | SSH agent socket (for agent forwarding) |
 | `PROMETHEUS_URL` | — | Prometheus server URL (leave empty to disable) |
 
-#### Running
+### SSH Key-Based Authentication
 
-```bash
-# Terminal 1 — Backend
-cd backend && npm run dev
+To use SSH key authentication instead of passwords:
 
-# Terminal 2 — Frontend
-cd frontend && npm run dev
+1. **Mount your SSH key** in `docker-compose.yml`:
+```yaml
+volumes:
+  - /home/youruser/.ssh/id_ed25519:/app/ssh_key:ro
 ```
 
-Open `http://localhost:3000`. The frontend proxies `/api/*` requests to the backend automatically.
+2. **Set the path** in `.env.docker`:
+```env
+SSH_PRIVATE_KEY_PATH=/app/ssh_key
+```
 
-#### Production Build
+> **Note:** Use absolute paths for SSH key mounts. `~` may not expand correctly when using `sudo`.
+
+### Migrating from Local to Docker
+
+If you have an existing database from local development:
+
+```bash
+mkdir -p data
+cp backend/database/dashboard.db data/dashboard.db
+docker compose up -d
+```
+
+### Production Build (Local)
 
 ```bash
 # Backend
@@ -186,7 +281,7 @@ cd backend && npm run build && npm start
 cd frontend && npm run build && npm start
 ```
 
-## Usage
+## 📖 Usage Guide
 
 ### Adding a Host
 
@@ -237,7 +332,7 @@ Requires a Prometheus instance accessible from the backend with the configured `
 2. Click the **"Install"** icon in the address bar
 3. The app installs to your home screen/desktop
 
-## API Endpoints
+## 📝 API Endpoints
 
 ### Hosts
 
@@ -271,7 +366,7 @@ Requires a Prometheus instance accessible from the backend with the configured `
 |--------|----------|-------------|
 | `GET` | `/api/events` | SSE stream for real-time status updates |
 
-## Docker Reference
+## 🐳 Docker Reference
 
 ### Architecture
 
@@ -303,14 +398,14 @@ The container runs both services:
 | `./data` | `/data` | Persistent SQLite database |
 | SSH key file | `/app/ssh_key` | SSH private key (read-only) |
 
-## Security Notes
+## 🔒 Security Notes
 
 - **SSH Passwords** — Encrypted at rest using AES-256 with the `SSH_ENCRYPTION_KEY`
 - **SSH Keys** — Mounted read-only into the container; never stored in the database
 - **No Authentication** — The dashboard has no login system. It is designed for trusted LAN environments
 - **Network** — `network_mode: host` is required for WoL (UDP broadcast) and ICMP ping. The app binds to all interfaces
 
-## Troubleshooting
+## 🐛 Troubleshooting
 
 ### Backend won't start
 - Check if port 3001 is already in use
@@ -338,6 +433,42 @@ The container runs both services:
 - Check the PromQL metric expression is correct (test in Prometheus UI first)
 - The metric field should be the full expression: `cem_active_power_watts{phase="l1"}`
 
-## License
+## 🤝 Contributing
+
+Contributions are welcome! Please follow these guidelines:
+
+### Getting Started
+
+1. Fork the repository
+2. Create a feature branch: `git checkout -b feature/your-feature`
+3. Make your changes and commit: `git commit -am 'Add your feature'`
+4. Push to your fork: `git push origin feature/your-feature`
+5. Open a Pull Request
+
+### Code Style
+
+- **Backend**: TypeScript with ESLint
+- **Frontend**: TypeScript + React conventions
+- Run `npm run lint` in both directories before submitting PR
+
+### Testing
+
+- Write tests for new features when possible
+- Ensure existing tests pass: `npm test`
+- Test Docker builds: `docker compose build`
+
+### Reporting Issues
+
+- Check existing issues first to avoid duplicates
+- Include reproduction steps and environment details
+- For security issues, please email privately instead of opening public issues
+
+## 💬 Support
+
+- **Documentation** — See this README and `/plans/architecture.md`
+- **Issues** — Open a GitHub issue for bugs or feature requests
+- **Discussions** — Use GitHub Discussions for general questions
+
+## 📄 License
 
 ISC
