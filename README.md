@@ -39,6 +39,7 @@
 - **Remote Control** — Shutdown and reboot hosts via SSH (password or key-based auth)
 - **Real-time Status** — Live online/offline monitoring with SSE (Server-Sent Events)
 - **Energy Monitoring** — Per-host power consumption charts from Prometheus, with sparkline graphs on the dashboard
+- **Energy Cost Tracking** — Calculate and visualize estimated energy costs using real-time price metrics
 - **Scheduling** — Configure power on/off schedules per day of week with automatic execution
 - **PWA** — Installable on mobile and desktop devices
 
@@ -296,7 +297,8 @@ cd frontend && npm run build && npm start
    - **SSH Port** — Default 22
    - **Shutdown/Reboot Commands** — Custom commands (defaults provided)
 4. Optionally configure energy monitoring:
-   - **Prometheus Metric** — Full PromQL expression (e.g., `cem_active_power_watts{phase="l1"}`)
+   - **Prometheus Metric** — Full PromQL expression for power consumption (e.g., `cem_active_power_watts{phase="l1"}`)
+   - **Energy Price Metric** — PromQL expression for electricity price per unit (e.g., `electricity_price_per_kwh`)
    - **Days Range** — Default time window for the chart (1–15 days)
 
 ### Controlling Hosts
@@ -314,6 +316,24 @@ When a host has a Prometheus metric configured:
 - The **host detail page** shows a full interactive chart with day range selector (1d/3d/7d/15d) and statistics (avg/max/min watts)
 
 Requires a Prometheus instance accessible from the backend with the configured `PROMETHEUS_URL`.
+
+### Energy Price Monitoring
+
+Track the cost of energy consumption by configuring an **Energy Price Metric**:
+
+1. **Set up the metric** in your Prometheus instance:
+   - Store electricity prices per kWh (e.g., `electricity_price_per_kwh`)
+   - Update prices when rates change
+   - Example: `100` = €0.100/kWh
+
+2. **Configure in SelfHost Dashboard**:
+   - When adding/editing a host, fill in the **Energy Price Metric** field
+   - Use the full PromQL expression: `electricity_price_per_kwh`
+
+3. **View cost analytics**:
+   - Dashboard cards show estimated daily energy cost
+   - Host detail page displays cost trends alongside power consumption
+   - Charts calculate cost = power (kW) × time (hours) × price (€/kWh)
 
 ### Scheduling
 
