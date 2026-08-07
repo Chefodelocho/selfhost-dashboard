@@ -21,6 +21,6 @@ services:
       - ./data:/data
       # Optional: mount your SSH private key for key-based authentication
       # Use an absolute path — ~ may not expand correctly with sudo
-      - ~/.ssh/id_ed25519:/app/ssh_key:ro
+      # - /home/youruser/.ssh/id_ed25519:/app/ssh_key:ro
     # Required for Wake-on-LAN (UDP broadcast) and ICMP ping
     network_mode: host
