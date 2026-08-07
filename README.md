@@ -53,7 +53,7 @@ The easiest way to get up and running. Perfect for production deployments.
 
 ```bash
 # 1. Clone and navigate to the project
-git clone https://github.com/YOUR_USERNAME/selfhost-dashboard.git
+git clone https://github.com/Chefodelocho/selfhost-dashboard.git
 cd selfhost-dashboard
 
 # 2. Copy the environment template
@@ -80,7 +80,7 @@ For development or testing without Docker.
 
 ```bash
 # 1. Clone the repository
-git clone https://github.com/YOUR_USERNAME/selfhost-dashboard.git
+git clone https://github.com/Chefodelocho/selfhost-dashboard.git
 cd selfhost-dashboard
 
 # 2. Install dependencies
@@ -119,24 +119,19 @@ cd frontend && npm run dev
 
 ## 📸 Screenshots
 
-> **[ADD YOUR SCREENSHOTS HERE]**
-> 
-> Show off your application with screenshots! Consider including:
-> - Dashboard overview with host cards
-> - Host detail page with energy charts
-> - Add/edit host form
-> - Mobile PWA view in action
->
-> **How to add:**
-> 1. Create a `docs/screenshots/` folder in your repository
-> 2. Take screenshots of your application running
-> 3. Upload them to the folder (e.g., `docs/screenshots/dashboard.png`)
-> 4. Replace this section with:
-> ```markdown
-> ![Dashboard Overview](docs/screenshots/dashboard.png)
-> ![Host Details](docs/screenshots/host-details.png)
-> ![Mobile View](docs/screenshots/mobile-view.png)
-> ```
+### Desktop (Browser)
+
+<p align="center">
+  <img src="docs/screenshots/BROWSER/Main_page.png" alt="Dashboard - Desktop Browser" width="450" />
+  <img src="docs/screenshots/BROWSER/Host_page.png" alt="Host Detail - Desktop Browser" width="300" />
+</p>
+
+### Mobile (PWA)
+
+<p align="center">
+  <img src="docs/screenshots/PWA/Main_page.jpeg" alt="Dashboard - PWA" width="220" />
+  <img src="docs/screenshots/PWA/Host_page.jpeg" alt="Host Detail - PWA" width="220" />
+</p>
 
 ## 🏗️ Architecture & Technology Stack
 
@@ -162,16 +157,8 @@ cd frontend && npm run dev
 
 Complementary projects and integrations that work well with SelfHost Dashboard:
 
-> **[ADD YOUR RELATED PROJECTS HERE]**
->
-> Share projects that complement or extend SelfHost Dashboard:
-> - Home server management tools
-> - Energy monitoring systems
-> - Infrastructure automation projects
-> - Similar dashboard applications
->
-> **Example format:**
-> - **[Project Name]** — Brief description of what it does. [GitHub Link](https://github.com/...)
+ - **[prometheus-cem-exporter]** — Prometheus exporter for CEM energy meters. Monitor the real energy consumption of your servers. [GitHub Link](https://github.com/Chefodelocho/prometheus-cem-exporter)
+ - **[esios_ree_exporter]** — Prometheus exporter of the daily energy rate price for PVPC energy in Spain. [GitHub Link](https://github.com/Chefodelocho/esios_ree_exporter)
 
 ## 📁 Project Structure
 
