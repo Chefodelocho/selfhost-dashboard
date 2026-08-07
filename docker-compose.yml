@@ -20,7 +20,8 @@ services:
       # Persist the SQLite database locally
       - ./data:/data
       # Optional: mount your SSH private key for key-based authentication
-      # Use an absolute path — ~ may not expand correctly with sudo
-      # - /home/youruser/.ssh/id_ed25519:/app/ssh_key:ro
+      # Set SSH_KEY_PATH in a root-level .env file (gitignored), e.g.:
+      #   SSH_KEY_PATH=/home/youruser/.ssh/id_ed25519
+      - ${SSH_KEY_PATH:-/dev/null}:/app/ssh_key:ro
     # Required for Wake-on-LAN (UDP broadcast) and ICMP ping
     network_mode: host
