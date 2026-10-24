@@ -4,9 +4,10 @@ import { useEffect, useState, useCallback } from 'react';
 import { hostAPI, scheduleAPI, connectToSSE } from '@/lib/api';
 import type { Host, Schedule, EnergyDataPoint } from '@/types';
 import Image from 'next/image';
-import { Power, PowerOff, RefreshCw, Plus, Server, Wifi, WifiOff, Clock, ChevronRight, Calendar, Zap, LogOut, Terminal } from 'lucide-react';
+import { PowerOff, RefreshCw, Plus, Server, Wifi, WifiOff, Clock, ChevronRight, Calendar, Zap, LogOut, Terminal } from 'lucide-react';
 import EnergySparkline from '@/components/EnergySparkline';
 import ThemeToggle from '@/components/ThemeToggle';
+import WakeHostButton from '@/components/WakeHostButton';
 import { useAuth } from '@/components/AuthProvider';
 
 const DAYS_OF_WEEK = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Daily'];
@@ -16,6 +17,7 @@ export default function Dashboard() {
   const [hosts, setHosts] = useState<Host[]>([]);
   const [schedules, setSchedules] = useState<Schedule[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
   const [refreshing, setRefreshing] = useState(false);
   const [currentTime, setCurrentTime] = useState<Date | null>(null);
   const [actionLoading, setActionLoading] = useState<number | null>(null);
@@ -84,6 +86,7 @@ export default function Dashboard() {
       setLoading(true);
       const data = await hostAPI.getAll();
       setHosts(data);
+      setLoadError(null);
       // Load schedules and energy data in parallel
       const [schedData] = await Promise.all([
         scheduleAPI.getAll().catch(() => []),
@@ -92,6 +95,7 @@ export default function Dashboard() {
       setSchedules(schedData as Schedule[]);
     } catch (error) {
       console.error('Failed to load hosts:', error);
+      setLoadError(error instanceof Error ? error.message : 'Unable to reach the server');
     } finally {
       setLoading(false);
     }
@@ -102,24 +106,13 @@ export default function Dashboard() {
       setRefreshing(true);
       const data = await hostAPI.getAll();
       setHosts(data);
+      setLoadError(null);
       loadEnergyForHosts(data);
     } catch (error) {
       console.error('Failed to refresh statuses:', error);
+      setLoadError(error instanceof Error ? error.message : 'Unable to reach the server');
     } finally {
       setRefreshing(false);
-    }
-  };
-
-  const sendWoL = async (hostId: number) => {
-    try {
-      setActionLoading(hostId);
-      await hostAPI.sendWoL(hostId);
-      setTimeout(() => refreshStatuses(), 2000);
-    } catch (error) {
-      console.error('Failed to send WoL:', error);
-      alert('Failed to send Wake on LAN packet');
-    } finally {
-      setActionLoading(null);
     }
   };
 
@@ -250,6 +243,18 @@ export default function Dashboard() {
       </header>
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
+        {loadError !== null && (
+          <div role="alert" className="mb-6 flex flex-wrap items-center justify-between gap-3 rounded-lg border border-red-200 bg-red-50 p-4 text-red-800 dark:border-red-800 dark:bg-red-950/40 dark:text-red-200">
+            <div className="min-w-0 break-words">
+              <p className="font-semibold">Failed to load hosts</p>
+              <p className="text-sm">{loadError}</p>
+            </div>
+            <button onClick={loadHosts} className="inline-flex shrink-0 items-center gap-2 rounded-lg border border-current px-3 py-1.5 text-sm">
+              <RefreshCw className="h-4 w-4" />
+              Retry
+            </button>
+          </div>
+        )}
         {/* Stats bar */}
         {hosts.length > 0 && (
           <div className="flex items-center gap-4 sm:gap-6 mb-6 animate-fade-in">
@@ -269,7 +274,7 @@ export default function Dashboard() {
         )}
 
         {/* Empty state */}
-        {hosts.length === 0 ? (
+        {hosts.length === 0 && loadError !== null ? null : hosts.length === 0 ? (
           <div className="text-center py-20 animate-fade-in">
             <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-blue-50 to-blue-100 flex items-center justify-center mx-auto mb-6 dark:from-gray-800 dark:to-gray-700">
               <Server className="w-10 h-10 text-blue-500 dark:text-blue-400" />
@@ -383,17 +388,16 @@ export default function Dashboard() {
                     </div>
 
                     {/* Action buttons */}
-                    <div className="flex gap-2">
-                      {host.status === 'offline' && (
-                        <button
-                          onClick={() => sendWoL(host.id)}
-                          disabled={actionLoading === host.id}
-                          className="flex-1 flex items-center justify-center gap-2 px-3 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-all text-sm font-medium disabled:opacity-50 shadow-sm shadow-green-600/20"
-                        >
-                          <Power className="w-3.5 h-3.5" />
-                          Wake
-                        </button>
-                      )}
+                    <div className="flex flex-wrap gap-2">
+                      <WakeHostButton
+                        host={host}
+                        disabled={actionLoading === host.id}
+                        onOnline={(status) => setHosts((previous) => previous.map((current) =>
+                          current.id === status.host_id
+                            ? { ...current, status: status.status, last_checked: status.last_checked }
+                            : current
+                        ))}
+                      />
                       {host.status === 'online' && (
                         <>
                           <button

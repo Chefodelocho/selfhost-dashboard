@@ -2,7 +2,7 @@
 
 import { createContext, useContext, useEffect, useState, useCallback, ReactNode } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
-import { authAPI, setAuthToken } from '@/lib/api';
+import { AUTH_TOKEN_CHANGED_EVENT, authAPI, getAuthToken, setAuthToken } from '@/lib/api';
 
 interface AuthContextType {
   /** Whether the backend requires login at all. */
@@ -87,18 +87,25 @@ export default function AuthProvider({ children }: { children: ReactNode }) {
 
   // Keep auth state in sync if another tab logs in/out.
   useEffect(() => {
+    const onTokenChanged = () => {
+      setIsAuthenticated(!!getAuthToken());
+    };
     const onStorage = (e: StorageEvent) => {
       if (e.key === 'selfhost_auth_token') {
-        setIsAuthenticated(!!e.newValue);
+        onTokenChanged();
       }
     };
+    window.addEventListener(AUTH_TOKEN_CHANGED_EVENT, onTokenChanged);
     window.addEventListener('storage', onStorage);
-    return () => window.removeEventListener('storage', onStorage);
+    return () => {
+      window.removeEventListener(AUTH_TOKEN_CHANGED_EVENT, onTokenChanged);
+      window.removeEventListener('storage', onStorage);
+    };
   }, []);
 
   // While the auth status is being determined, render nothing to avoid
   // flashing protected content (or an unnecessary redirect).
-  if (loading) {
+  if (loading || (authEnabled && !isAuthenticated && pathname !== '/login')) {
     return null;
   }
 

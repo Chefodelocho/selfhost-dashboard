@@ -15,6 +15,7 @@ import type {
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api';
 
 const TOKEN_STORAGE_KEY = 'selfhost_auth_token';
+export const AUTH_TOKEN_CHANGED_EVENT = 'selfhost-auth-token-changed';
 
 /** Retrieve the stored session token (if any). */
 export function getAuthToken(): string | null {
@@ -30,6 +31,7 @@ export function setAuthToken(token: string | null): void {
   } else {
     localStorage.removeItem(TOKEN_STORAGE_KEY);
   }
+  window.dispatchEvent(new Event(AUTH_TOKEN_CHANGED_EVENT));
 }
 
 /**
