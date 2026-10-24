@@ -7,6 +7,7 @@ import type { Host, Schedule, EnergyDataPoint } from '@/types';
 import { ArrowLeft, Power, PowerOff, RefreshCw, Edit, Calendar, Trash2, Plus, Server, Clock, Monitor, Wifi, WifiOff, ChevronRight, Zap, Terminal } from 'lucide-react';
 import EnergyChart from '@/components/EnergyChart';
 import ThemeToggle from '@/components/ThemeToggle';
+import WakeHostButton from '@/components/WakeHostButton';
 
 const DAYS_OF_WEEK = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Daily'];
 
@@ -98,19 +99,6 @@ export default function HostDetail({ params }: { params: Promise<{ id: string }>
       console.error('Failed to refresh status:', error);
     } finally {
       setRefreshing(false);
-    }
-  };
-
-  const sendWoL = async () => {
-    try {
-      setActionLoading(true);
-      await hostAPI.sendWoL(hostId);
-      setTimeout(() => refreshStatus(), 2000);
-    } catch (error) {
-      console.error('Failed to send WoL:', error);
-      alert('Failed to send Wake on LAN packet');
-    } finally {
-      setActionLoading(false);
     }
   };
 
@@ -335,16 +323,15 @@ export default function HostDetail({ params }: { params: Promise<{ id: string }>
                     <RefreshCw className={`w-4 h-4 ${refreshing ? 'animate-spin' : ''}`} />
                     Refresh Status
                   </button>
-                  {host.status === 'offline' && (
-                    <button
-                      onClick={sendWoL}
-                      disabled={actionLoading}
-                      className="w-full flex items-center justify-center gap-2 px-3 py-2.5 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50 transition-all text-sm font-medium shadow-sm shadow-green-600/20"
-                    >
-                      <Power className="w-4 h-4" />
-                      Wake on LAN
-                    </button>
-                  )}
+                  <WakeHostButton
+                    key={hostId}
+                    host={host}
+                    disabled={actionLoading}
+                    onOnline={(status) => setHost((current) => current
+                      ? { ...current, status: status.status, last_checked: status.last_checked }
+                      : current
+                    )}
+                  />
                   {host.status === 'online' && (
                     <div className="grid grid-cols-2 gap-2">
                       <button
@@ -485,7 +472,7 @@ export default function HostDetail({ params }: { params: Promise<{ id: string }>
                     schedules.map((schedule) => (
                       <div
                         key={schedule.id}
-                        className={`group flex items-center justify-between p-3 rounded-lg border transition-colors ${
+                        className={`flex items-center justify-between gap-2 p-3 rounded-lg border transition-colors ${
                           schedule.enabled
                             ? 'bg-white border-gray-200/80 hover:border-gray-300 dark:bg-gray-800 dark:border-gray-700/80 dark:hover:border-gray-600'
                             : 'bg-gray-50/50 border-gray-100 opacity-60 dark:bg-gray-800/50 dark:border-gray-700/50'
@@ -510,18 +497,22 @@ export default function HostDetail({ params }: { params: Promise<{ id: string }>
                             </div>
                           </div>
                         </div>
-                        <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <div className="flex shrink-0 items-center gap-1">
                           <button
                             onClick={() => handleEditSchedule(schedule)}
-                            className="p-1.5 text-gray-400 hover:text-gray-700 hover:bg-gray-100 rounded-md transition-colors dark:text-gray-500 dark:hover:text-gray-300 dark:hover:bg-gray-700"
+                            aria-label="Edit schedule"
+                            title="Edit schedule"
+                            className="flex h-11 w-11 items-center justify-center text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-md transition-colors dark:text-gray-400 dark:hover:text-gray-300 dark:hover:bg-gray-700"
                           >
-                            <Edit className="w-3.5 h-3.5" />
+                            <Edit className="w-5 h-5" />
                           </button>
                           <button
                             onClick={() => handleDeleteSchedule(schedule.id)}
-                            className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-md transition-colors dark:hover:text-red-400 dark:hover:bg-red-900/30"
+                            aria-label="Delete schedule"
+                            title="Delete schedule"
+                            className="flex h-11 w-11 items-center justify-center text-gray-500 hover:text-red-600 hover:bg-red-50 rounded-md transition-colors dark:text-gray-400 dark:hover:text-red-400 dark:hover:bg-red-900/30"
                           >
-                            <Trash2 className="w-3.5 h-3.5" />
+                            <Trash2 className="w-5 h-5" />
                           </button>
                         </div>
                       </div>
